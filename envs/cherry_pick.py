@@ -8,6 +8,14 @@ from entity_gym.environment import Environment, Entity, SelectEntity, ActionSpac
 
 @dataclass
 class CherryPick(Environment):
+    """
+    The CherryPick environment is initalized with a list of 32 cherries of random quality.
+    On each timestep, the player can pick up one of the cherries.
+    The player receives a reward of the quality of the cherry picked.
+    The environment ends after 16 steps.
+    The quality of the top 16 cherries is normalized so that the maximum total achievable reward is 1.0.
+    """
+
     cherries: List[float] = field(default_factory=list)
     last_reward: float = 0.0
     step: int = 0
@@ -40,18 +48,6 @@ class CherryPick(Environment):
         return self.filter_obs(self.observe(), obs_config)
 
     def observe(self) -> Observation:
-        """
-        @dataclass
-        class Observation:
-            # Maps each entity type to an array with features for each entity of that type.
-            entities: Sequence[Tuple[str, np.ndarray]]
-            # Maps each entity index to an identifier for the entity.
-            ids: Sequence[int]
-            # Maps each action type to an action mask.
-            actions: Sequence[Tuple[str, ActionMask]]
-            reward: float
-            done: bool
-        """
         return Observation(
             entities=[
                 ("Cherry", np.array(self.cherries).reshape(-1, 1)),
