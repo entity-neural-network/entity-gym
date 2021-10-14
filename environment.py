@@ -27,9 +27,9 @@ class ObsConfig:
 
 
 @dataclass
-class AvailableActions(ABC):
+class ActionMask(ABC):
     # Indices of entities which can perform the action on this time step.
-    actors: List[int]
+    actors: Sequence[int]
     # Action mask with dimensions (len(actors), n_choices) if this is a categorical action,
     # or (len(actors), len(entities)) if this is a select object action.
     mask: Optional[np.ndarray]
@@ -42,8 +42,8 @@ class Observation:
     entities: Sequence[Tuple[str, np.ndarray]]
     # Maps each entity index to an identifier for the entity.
     ids: Sequence[int]
-    # Maps each action type to a list of indices of the entities that can perform that action.
-    actions: Sequence[Tuple[str, Sequence[int]]]
+    # Maps each action type to an action mask.
+    action_masks: Sequence[Tuple[str, ActionMask]]
     reward: float
     done: bool
 
@@ -88,7 +88,9 @@ class Environment(ABC):
         for entity_name, entity_features in obs_config.entities.items():
             entity = entity_dict[entity_name]
             feature_selection[entity_name] = np.array(
-                [entity.features.index(f) for f in entity_features])
+                [entity.features.index(f) for f in entity_features],
+                dtype=np.int32
+            )
         return feature_selection
 
     # TODO: generic way of filtering selected entities/features so environments don't have to implement this (but still have the option to do so for potentially better efficiency).
@@ -98,7 +100,7 @@ class Environment(ABC):
         for entity_name, entity_features in obs.entities:
             entities.append(
                 (entity_name, entity_features[:, selectors[entity_name]]))
-        return Observation(entities, obs.ids, obs.actions, obs.reward, obs.done)
+        return Observation(entities, obs.ids, obs.action_masks, obs.reward, obs.done)
 
     def simple_reset(self) -> Observation:
         raise NotImplementedError

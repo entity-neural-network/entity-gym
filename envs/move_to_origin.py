@@ -3,7 +3,7 @@ import numpy as np
 import random
 from typing import List
 
-from entity_gym.environment import Environment, Entity, Categorical, ActionSpace, ObsConfig, Observation, Action
+from entity_gym.environment import ActionMask, Environment, Entity, Categorical, ActionSpace, ObsConfig, Observation, Action
 
 
 @dataclass
@@ -105,7 +105,10 @@ class MoveToOrigin(Environment):
                         [[self.x_pos, self.y_pos, self.x_velocity, self.y_velocity, self.step]])
                 ),
             ],
-            actions=[("horizontal_thruster", [0]), ("vertical_thruster", [0])],
+            action_masks=[
+                ("horizontal_thruster", ActionMask(actors=[0], mask=None)),
+                ("vertical_thruster", ActionMask(actors=[0], mask=None)),
+            ],
             ids=[0],
             reward=(self.last_x_pos ** 2 + self.last_y_pos ** 2) ** 0.5 -
             (self.x_pos ** 2 + self.y_pos ** 2) ** 0.5,
