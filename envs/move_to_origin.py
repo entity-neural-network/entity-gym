@@ -8,6 +8,10 @@ from entity_gym.environment import ActionMask, Environment, Entity, Categorical,
 
 @dataclass
 class MoveToOrigin(Environment):
+    """
+    Task with a single Spaceship that is rewarded for moving as close to the origin as possible.
+    The Spaceship has two actions for accelerating the Spaceship in the x and y directions.
+    """
     x_pos: float = 0.0
     y_pos: float = 0.0
     x_velocity: float = 0.0

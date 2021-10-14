@@ -4,6 +4,7 @@ import argparse
 from entity_gym.envs.move_to_origin import MoveToOrigin
 from entity_gym.envs.cherry_pick import CherryPick
 from entity_gym.envs.pick_matching_balls import PickMatchingBalls
+from entity_gym.envs.minefield import Minefield
 from entity_gym.environment import ObsConfig, Categorical, Action, Observation, SelectEntity
 
 
@@ -30,6 +31,8 @@ if __name__ == "__main__":
         env_cls = CherryPick
     elif args.env == "PickMatchingBalls":
         env_cls = PickMatchingBalls
+    elif args.env == "Minefield":
+        env_cls = Minefield
     else:
         raise ValueError("Unknown environment: {}".format(args.env))
 
