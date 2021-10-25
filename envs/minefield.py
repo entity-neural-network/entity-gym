@@ -3,7 +3,7 @@ import numpy as np
 import random
 from typing import List, Tuple
 
-from entity_gym.environment import ActionMask, Environment, Entity, Categorical, ActionSpace, ObsConfig, Observation, Action
+from entity_gym.environment import ActionMask, Environment, Type, CategoricalActionSpace, ActionSpace, ObsFilter, Observation, Action
 
 
 @dataclass
@@ -22,17 +22,17 @@ class Minefield(Environment):
     step: int = 0
 
     @classmethod
-    def entities(cls) -> List[Entity]:
+    def state_space(cls) -> List[Type]:
         return [
-            Entity(
+            Type(
                 name="Vehicle",
                 features=["x_pos", "y_pos", "direction", "step"],
             ),
-            Entity(
+            Type(
                 name="Mine",
                 features=["x_pos", "y_pos"],
             ),
-            Entity(
+            Type(
                 name="Target",
                 features=["x_pos", "y_pos"],
             )
@@ -41,14 +41,14 @@ class Minefield(Environment):
     @classmethod
     def action_space(cls) -> List[ActionSpace]:
         return [
-            Categorical(
+            CategoricalActionSpace(
                 name="move",
                 n=3,
                 choice_labels=["turn left", "move forward", "turn right"],
             )
         ]
 
-    def reset(self, obs_config: ObsConfig) -> Observation:
+    def reset(self, obs_config: ObsFilter) -> Observation:
         self.x_pos, self.y_pos = (
             random.uniform(-100, 100), random.uniform(-100, 100))
         self.x_pos_target, self.y_pos_target = (
@@ -67,7 +67,7 @@ class Minefield(Environment):
         self.mines = mines
         return self.observe(obs_config)
 
-    def act(self, action: Action, obs_config: ObsConfig) -> Observation:
+    def act(self, action: Action, obs_config: ObsFilter) -> Observation:
         for action_name, chosen_actions in action.chosen_actions.items():
             if action_name == "move":
                 action = chosen_actions[0][1]
@@ -89,7 +89,7 @@ class Minefield(Environment):
 
         return self.observe(obs_config)
 
-    def observe(self, obs_config: ObsConfig, done: bool = False) -> Observation:
+    def observe(self, obs_config: ObsFilter, done: bool = False) -> Observation:
         if (self.x_pos_target - self.x_pos) ** 2 + (
                 self.y_pos_target - self.y_pos) ** 2 < 5 * 5:
             done = True

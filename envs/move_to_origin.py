@@ -3,7 +3,7 @@ import numpy as np
 import random
 from typing import List
 
-from entity_gym.environment import ActionMask, Environment, Entity, Categorical, ActionSpace, ObsConfig, Observation, Action
+from entity_gym.environment import ActionMask, Environment, Type, CategoricalActionSpace, ActionSpace, ObsFilter, Observation, Action
 
 
 @dataclass
@@ -21,9 +21,9 @@ class MoveToOrigin(Environment):
     step: int = 0
 
     @classmethod
-    def entities(cls) -> List[Entity]:
+    def state_space(cls) -> List[Type]:
         return [
-            Entity(
+            Type(
                 name="Spaceship",
                 features=["x_pos", "y_pos", "x_velocity", "y_velocity", "step"]
             ),
@@ -32,13 +32,13 @@ class MoveToOrigin(Environment):
     @classmethod
     def action_space(cls) -> List[ActionSpace]:
         return [
-            Categorical(
+            CategoricalActionSpace(
                 name="horizontal_thruster",
                 n=5,
                 choice_labels=["100% right", "10% right",
                                "hold", "10% left", "100% left"],
             ),
-            Categorical(
+            CategoricalActionSpace(
                 name="vertical_thruster",
                 n=5,
                 choice_labels=["100% up", "10% up",
@@ -46,7 +46,7 @@ class MoveToOrigin(Environment):
             ),
         ]
 
-    def reset(self, obs_config: ObsConfig) -> Observation:
+    def reset(self, obs_config: ObsFilter) -> Observation:
         angle = random.uniform(0, 2 * np.pi)
         self.x_pos = np.cos(angle)
         self.y_pos = np.sin(angle)
@@ -56,7 +56,7 @@ class MoveToOrigin(Environment):
         self.y_velocity = 0
         return self.observe(obs_config)
 
-    def act(self, action: Action, obs_config: ObsConfig) -> Observation:
+    def act(self, action: Action, obs_config: ObsFilter) -> Observation:
         self.step += 1
 
         for action_name, chosen_actions in action.chosen_actions.items():
@@ -100,7 +100,7 @@ class MoveToOrigin(Environment):
         done = self.step >= 32
         return self.observe(obs_config, done)
 
-    def observe(self, obs_config: ObsConfig, done: bool = False) -> Observation:
+    def observe(self, obs_config: ObsFilter, done: bool = False) -> Observation:
         return self.filter_obs(Observation(
             entities=[
                 (

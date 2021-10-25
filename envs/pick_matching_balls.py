@@ -3,7 +3,7 @@ import numpy as np
 import random
 from typing import List
 
-from entity_gym.environment import Environment, Entity, SelectEntity, ActionSpace, ObsConfig, Observation, ActionMask, Action
+from entity_gym.environment import Environment, Type, SelectEntityActionSpace, ActionSpace, ObsFilter, Observation, ActionMask, Action
 
 
 @dataclass
@@ -23,14 +23,14 @@ class PickMatchingBalls(Environment):
     balls: List[Ball] = field(default_factory=list)
 
     @classmethod
-    def entities(cls) -> List[Entity]:
+    def state_space(cls) -> List[Type]:
         return [
-            Entity(
+            Type(
                 name="Ball",
                 # TODO: better support for categorical features
                 features=["color", "selected"],
             ),
-            Entity(
+            Type(
                 name="Player",
                 features=[],
             ),
@@ -38,9 +38,9 @@ class PickMatchingBalls(Environment):
 
     @classmethod
     def action_space(cls) -> List[ActionSpace]:
-        return [SelectEntity("Pick Ball")]
+        return [SelectEntityActionSpace("Pick Ball")]
 
-    def reset(self, obs_config: ObsConfig) -> Observation:
+    def reset(self, obs_config: ObsFilter) -> Observation:
         self.balls = [
             Ball(color=random.randint(0, 5)) for _ in range(32)
         ]
@@ -75,7 +75,7 @@ class PickMatchingBalls(Environment):
             done=done,
         )
 
-    def act(self, actions: Action, obs_config: ObsConfig) -> Observation:
+    def act(self, actions: Action, obs_config: ObsFilter) -> Observation:
         for action_name, action_choices in actions.chosen_actions.items():
             assert not self.balls[action_choices[0][1]].selected
             self.last_reward = self.balls[action_choices[0][1]].selected = True

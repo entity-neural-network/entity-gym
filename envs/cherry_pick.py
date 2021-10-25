@@ -3,7 +3,7 @@ import numpy as np
 import random
 from typing import List
 
-from entity_gym.environment import Environment, Entity, SelectEntity, ActionSpace, ObsConfig, Observation, ActionMask, Action
+from entity_gym.environment import Environment, Type, SelectEntityActionSpace, ActionSpace, ObsFilter, Observation, ActionMask, Action
 
 
 @dataclass
@@ -21,13 +21,13 @@ class CherryPick(Environment):
     step: int = 0
 
     @classmethod
-    def entities(cls) -> List[Entity]:
+    def state_space(cls) -> List[Type]:
         return [
-            Entity(
+            Type(
                 name="Cherry",
                 features=["quality"],
             ),
-            Entity(
+            Type(
                 name="Player",
                 features=[],
             ),
@@ -35,9 +35,9 @@ class CherryPick(Environment):
 
     @classmethod
     def action_space(cls) -> List[ActionSpace]:
-        return [SelectEntity("Pick Cherry")]
+        return [SelectEntityActionSpace("Pick Cherry")]
 
-    def reset(self, obs_config: ObsConfig) -> Observation:
+    def reset(self, obs_config: ObsFilter) -> Observation:
         cherries = [np.random.normal() for _ in range(32)]
         # Normalize so that the sum of the top 16 is 1.0
         top_16 = sorted(cherries, reverse=True)[:16]
@@ -65,7 +65,7 @@ class CherryPick(Environment):
             done=self.step == 16,
         )
 
-    def act(self, actions: Action, obs_config: ObsConfig) -> Observation:
+    def act(self, actions: Action, obs_config: ObsFilter) -> Observation:
         for action_name, action_choices in actions.chosen_actions.items():
             self.last_reward = self.cherries.pop(action_choices[0][1])
         self.step += 1
