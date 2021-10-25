@@ -4,7 +4,20 @@ from typing import Dict, List, Tuple
 import random
 import numpy as np
 
-from entity_gym.environment import ActionMask, DenseCategoricalActionMask, Entity, Environment, Type, CategoricalActionSpace, ActionSpace, ObsFilter, Observation, Action, VecEnv
+from entity_gym.environment import (
+    ActionMask,
+    CategoricalAction,
+    DenseCategoricalActionMask,
+    Entity,
+    Environment,
+    Type,
+    CategoricalActionSpace,
+    ActionSpace,
+    ObsFilter,
+    Observation,
+    Action,
+    VecEnv,
+)
 
 
 @dataclass
@@ -39,8 +52,8 @@ class MultiSnake(Environment):
         assert num_snakes < 10, f"num_snakes must be less than 10, got {num_snakes}"
         self.board_size = board_size
         self.num_snakes = num_snakes
-        self.snakes = []
-        self.Food = []
+        self.snakes: List[Snake] = []
+        self.food: List[Food] = []
 
     @classmethod
     def state_space(cls) -> List[Entity]:
@@ -56,7 +69,7 @@ class MultiSnake(Environment):
             Entity(
                 name="Food",
                 features=["x", "y", "color"],
-            )
+            ),
         ]
 
     @classmethod
@@ -84,18 +97,16 @@ class MultiSnake(Environment):
         while True:
             x = random.randint(0, self.board_size - 1)
             y = random.randint(0, self.board_size - 1)
-            if any(
-                (x, y) == (f.position[0], f.position[1]) for f in self.Food
-            ) or any(
+            if any((x, y) == (f.position[0], f.position[1]) for f in self.food) or any(
                 (x, y) == (sx, sy) for snake in self.snakes for sx, sy in snake.segments
             ):
                 continue
-            self.Food.append(Food(color, (x, y)))
+            self.food.append(Food(color, (x, y)))
             break
 
     def _reset(self) -> Observation:
         self.snakes = []
-        self.Food = []
+        self.food = []
         for i in range(self.num_snakes):
             self._spawn_snake(i)
         for i in range(self.num_snakes):
@@ -104,8 +115,10 @@ class MultiSnake(Environment):
 
     def _act(self, action: Dict[str, Action]) -> Observation:
         game_over = False
-        reward = 0
-        for id, move in action["move"].actions:
+        reward = 0.0
+        move_action = action["move"]
+        assert isinstance(move_action, CategoricalAction)
+        for id, move in move_action.actions:
             snake = self.snakes[id]
             x, y = snake.segments[-1]
             if move == 0:
@@ -118,19 +131,17 @@ class MultiSnake(Environment):
                 x += 1
             if x < 0 or x >= self.board_size or y < 0 or y >= self.board_size:
                 game_over = True
-            if any(
-                (x, y) == (sx, sy) for s in self.snakes for sx, sy in s.segments
-            ):
+            if any((x, y) == (sx, sy) for s in self.snakes for sx, sy in s.segments):
                 game_over = True
             ate_Food = False
-            for i in range(len(self.Food)):
-                if self.Food[i].position == (x, y):
-                    if self.Food[i].color != snake.color:
+            for i in range(len(self.food)):
+                if self.food[i].position == (x, y):
+                    if self.food[i].color != snake.color:
                         game_over = True
                     elif len(snake.segments) < 11:
                         ate_Food = True
                         reward += 0.1 / self.num_snakes
-                    self.Food.pop(i)
+                    self.food.pop(i)
                     self._spawn_Food(snake.color)
                     break
             snake.segments.append((x, y))
@@ -160,24 +171,25 @@ class MultiSnake(Environment):
                             for snake in self.snakes
                             for sx, sy in snake.segments[1:]
                         ]
-                    ).reshape(-1, 3)
+                    ).reshape(-1, 3),
                 ),
                 (
                     "Food",
                     np.array(
-                        [
-                            [f.position[0], f.position[1], f.color]
-                            for f in self.Food
-                        ]
-                    )
+                        [[f.position[0], f.position[1], f.color] for f in self.food]
+                    ),
                 ),
             ],
-            ids=list(range(sum([len(s.segments)
-                                for s in self.snakes]) + len(self.Food))),
+            ids=list(
+                range(sum([len(s.segments) for s in self.snakes]) + len(self.food))
+            ),
             action_masks=[
-                ("move", DenseCategoricalActionMask(
-                    actors=list(range(self.num_snakes)),
-                ))
+                (
+                    "move",
+                    DenseCategoricalActionMask(
+                        actors=list(range(self.num_snakes)),
+                    ),
+                )
             ],
             reward=reward,
             done=done,

@@ -1,9 +1,21 @@
 from dataclasses import dataclass, field
 import numpy as np
 import random
-from typing import List
+from typing import Dict, List
 
-from entity_gym.environment import Environment, Type, SelectEntityActionSpace, ActionSpace, ObsFilter, Observation, ActionMask, Action
+from entity_gym.environment import (
+    DenseSelectEntityActionMask,
+    Entity,
+    Environment,
+    SelectEntityAction,
+    Type,
+    SelectEntityActionSpace,
+    ActionSpace,
+    ObsFilter,
+    Observation,
+    ActionMask,
+    Action,
+)
 
 
 @dataclass
@@ -21,13 +33,13 @@ class CherryPick(Environment):
     step: int = 0
 
     @classmethod
-    def state_space(cls) -> List[Type]:
+    def state_space(cls) -> List[Entity]:
         return [
-            Type(
+            Entity(
                 name="Cherry",
                 features=["quality"],
             ),
-            Type(
+            Entity(
                 name="Player",
                 features=[],
             ),
@@ -37,7 +49,7 @@ class CherryPick(Environment):
     def action_space(cls) -> List[ActionSpace]:
         return [SelectEntityActionSpace("Pick Cherry")]
 
-    def reset(self, obs_config: ObsFilter) -> Observation:
+    def _reset(self) -> Observation:
         cherries = [np.random.normal() for _ in range(32)]
         # Normalize so that the sum of the top 16 is 1.0
         top_16 = sorted(cherries, reverse=True)[:16]
@@ -45,7 +57,7 @@ class CherryPick(Environment):
         normalized_cherries = [c / sum_top_16 for c in cherries]
         self.cherries = normalized_cherries
         self.last_reward = 0.0
-        return self.filter_obs(self.observe(), obs_config)
+        return self.observe()
 
     def observe(self) -> Observation:
         return Observation(
@@ -55,18 +67,24 @@ class CherryPick(Environment):
             ],
             ids=np.arange(len(self.cherries) + 1),
             action_masks=[
-                ("Pick Cherry", ActionMask(
-                    actors=[len(self.cherries)],
-                    mask=(np.arange(len(self.cherries) + 1) <
-                          len(self.cherries)).astype(np.float32),
-                ))
+                (
+                    "Pick Cherry",
+                    DenseSelectEntityActionMask(
+                        actors=[len(self.cherries)],
+                        mask=(
+                            np.arange(len(self.cherries) + 1) < len(self.cherries)
+                        ).astype(np.float32),
+                    ),
+                )
             ],
             reward=self.last_reward,
             done=self.step == 16,
         )
 
-    def act(self, actions: Action, obs_config: ObsFilter) -> Observation:
-        for action_name, action_choices in actions.chosen_actions.items():
-            self.last_reward = self.cherries.pop(action_choices[0][1])
+    def _act(self, action: Dict[str, Action]) -> Observation:
+        for action_name, a in action.items():
+            assert isinstance(a, SelectEntityAction)
+            assert action_name == "Pick Cherry"
+            self.last_reward = self.cherries.pop(a.actions[0][1])
         self.step += 1
-        return self.filter_obs(self.observe(), obs_config)
+        return self.observe()

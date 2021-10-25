@@ -1,9 +1,22 @@
 from dataclasses import dataclass, field
 import numpy as np
 import random
-from typing import List
+from typing import Dict, List
 
-from entity_gym.environment import Environment, Type, SelectEntityActionSpace, ActionSpace, ObsFilter, Observation, ActionMask, Action
+from entity_gym.environment import (
+    CategoricalAction,
+    DenseCategoricalActionMask,
+    DenseSelectEntityActionMask,
+    Entity,
+    Environment,
+    Type,
+    SelectEntityActionSpace,
+    ActionSpace,
+    ObsFilter,
+    Observation,
+    ActionMask,
+    Action,
+)
 
 
 @dataclass
@@ -16,21 +29,22 @@ class Ball:
 class PickMatchingBalls(Environment):
     """
     The PickMatchingBalls environment is initalized with a list of 32 balls of different colors.
-    On each timestamp, the player can pick up one of the balls. 
+    On each timestamp, the player can pick up one of the balls.
     The episode ends when the player picks up a ball of a different color from the last one.
     The player receives a reward equal to the number of balls picked up divided by the maximum number of balls of the same color.
     """
+
     balls: List[Ball] = field(default_factory=list)
 
     @classmethod
-    def state_space(cls) -> List[Type]:
+    def state_space(cls) -> List[Entity]:
         return [
-            Type(
+            Entity(
                 name="Ball",
                 # TODO: better support for categorical features
                 features=["color", "selected"],
             ),
-            Type(
+            Entity(
                 name="Player",
                 features=[],
             ),
@@ -40,43 +54,49 @@ class PickMatchingBalls(Environment):
     def action_space(cls) -> List[ActionSpace]:
         return [SelectEntityActionSpace("Pick Ball")]
 
-    def reset(self, obs_config: ObsFilter) -> Observation:
-        self.balls = [
-            Ball(color=random.randint(0, 5)) for _ in range(32)
-        ]
-        return self.filter_obs(self.observe(), obs_config)
+    def _reset(self) -> Observation:
+        self.balls = [Ball(color=random.randint(0, 5)) for _ in range(32)]
+        return self.observe()
 
     def observe(self) -> Observation:
-        done = len({b.color for b in self.balls if b.selected}
-                   ) > 1 or all(b.selected for b in self.balls)
+        done = len({b.color for b in self.balls if b.selected}) > 1 or all(
+            b.selected for b in self.balls
+        )
         if done:
             reward = (sum(b.selected for b in self.balls) - 1) / max(
-                [len([b for b in self.balls if b.color == color]) for color in range(6)])
+                [len([b for b in self.balls if b.color == color]) for color in range(6)]
+            )
         else:
             reward = 0.0
 
         return Observation(
             entities=[
-                ("Ball", np.array(
-                    [[float(b.color), float(b.selected)] for b in self.balls])),
+                (
+                    "Ball",
+                    np.array([[float(b.color), float(b.selected)] for b in self.balls]),
+                ),
                 ("Player", np.zeros([1, 0])),
             ],
             ids=np.arange(len(self.balls) + 1),
             action_masks=[
-                ("Pick Ball",
-                 ActionMask(
-                     actors=[len(self.balls)],
-                     mask=np.array(
-                         [not b.selected for b in self.balls] + [False]).astype(np.float32),
-                 )
-                 ),
+                (
+                    "Pick Ball",
+                    DenseSelectEntityActionMask(
+                        actors=[len(self.balls)],
+                        mask=np.array(
+                            [not b.selected for b in self.balls] + [False]
+                        ).astype(np.float32),
+                    ),
+                ),
             ],
             reward=reward,
             done=done,
         )
 
-    def act(self, actions: Action, obs_config: ObsFilter) -> Observation:
-        for action_name, action_choices in actions.chosen_actions.items():
-            assert not self.balls[action_choices[0][1]].selected
-            self.last_reward = self.balls[action_choices[0][1]].selected = True
-        return self.filter_obs(self.observe(), obs_config)
+    def _act(self, actions: Dict[str, Action]) -> Observation:
+        action = actions["Pick Ball"]
+        assert isinstance(action, CategoricalAction)
+        for _, selected_ball in action.actions:
+            assert not self.balls[selected_ball].selected
+            self.last_reward = self.balls[selected_ball].selected = True
+        return self.observe()

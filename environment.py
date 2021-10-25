@@ -1,7 +1,7 @@
 from abc import ABC, abstractclassmethod, abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Type
 import numpy as np
 
 
@@ -139,7 +139,7 @@ class Environment(ABC):
     def reset(self, obs_filter: ObsFilter) -> Observation:
         return self.__class__.filter_obs(self._reset(), obs_filter)
 
-    def act(self, action: Action, obs_filter: ObsFilter) -> Observation:
+    def act(self, action: Mapping[str, Action], obs_filter: ObsFilter) -> Observation:
         return self.__class__.filter_obs(self._act(action), obs_filter)
 
     @classmethod
@@ -147,8 +147,7 @@ class Environment(ABC):
         selectors = cls._compile_feature_filter(obs_filter)
         entities = []
         for entity_name, entity_features in obs.entities:
-            entities.append(
-                (entity_name, entity_features[:, selectors[entity_name]]))
+            entities.append((entity_name, entity_features[:, selectors[entity_name]]))
         return Observation(entities, obs.ids, obs.action_masks, obs.reward, obs.done)
 
     @classmethod
@@ -158,8 +157,7 @@ class Environment(ABC):
         for entity_name, entity_features in obs_filter.entity_to_feats.items():
             entity = entity_dict[entity_name]
             feature_selection[entity_name] = np.array(
-                [entity.features.index(f) for f in entity_features],
-                dtype=np.int32
+                [entity.features.index(f) for f in entity_features], dtype=np.int32
             )
         return feature_selection
 
@@ -184,7 +182,9 @@ class VecEnv(ABC):
         obs = self._reset()
         return [self.__class__.env_cls().filter_obs(o, obs_config) for o in obs]
 
-    def act(self, actions: List[Action], obs_filter: ObsFilter) -> List[Observation]:
+    def act(
+        self, actions: List[Dict[str, Action]], obs_filter: ObsFilter
+    ) -> List[Observation]:
         obs = self._act(actions)
         return [self.__class__.env_cls().filter_obs(o, obs_filter) for o in obs]
 

@@ -1,9 +1,21 @@
 from dataclasses import dataclass, field
 import numpy as np
 import random
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
-from entity_gym.environment import ActionMask, Environment, Type, CategoricalActionSpace, ActionSpace, ObsFilter, Observation, Action
+from entity_gym.environment import (
+    ActionMask,
+    CategoricalAction,
+    DenseCategoricalActionMask,
+    Entity,
+    Environment,
+    Type,
+    CategoricalActionSpace,
+    ActionSpace,
+    ObsFilter,
+    Observation,
+    Action,
+)
 
 
 @dataclass
@@ -13,6 +25,7 @@ class Minefield(Environment):
     If the vehicle collides with any of the randomly placed mines, the episode ends without reward.
     The available actions either turn the vehicle left, right, or go straight.
     """
+
     x_pos: float = 0.0
     y_pos: float = 0.0
     direction: float = 0.0
@@ -22,20 +35,20 @@ class Minefield(Environment):
     step: int = 0
 
     @classmethod
-    def state_space(cls) -> List[Type]:
+    def state_space(cls) -> List[Entity]:
         return [
-            Type(
+            Entity(
                 name="Vehicle",
                 features=["x_pos", "y_pos", "direction", "step"],
             ),
-            Type(
+            Entity(
                 name="Mine",
                 features=["x_pos", "y_pos"],
             ),
-            Type(
+            Entity(
                 name="Target",
                 features=["x_pos", "y_pos"],
-            )
+            ),
         ]
 
     @classmethod
@@ -48,81 +61,88 @@ class Minefield(Environment):
             )
         ]
 
-    def reset(self, obs_config: ObsFilter) -> Observation:
-        self.x_pos, self.y_pos = (
-            random.uniform(-100, 100), random.uniform(-100, 100))
+    def _reset(self) -> Observation:
+        self.x_pos, self.y_pos = (random.uniform(-100, 100), random.uniform(-100, 100))
         self.x_pos_target, self.y_pos_target = (
-            random.uniform(-100, 100), random.uniform(-100, 100))
-        mines = []
+            random.uniform(-100, 100),
+            random.uniform(-100, 100),
+        )
+        mines: List[Tuple[float, float]] = []
         for _ in range(10):
             x, y = (random.uniform(-100, 100), random.uniform(-100, 100))
             # Check that the mine is not too close to the vehicle, target, or any other mine
-            pos = list(mines) + [(self.x_pos, self.y_pos),
-                                 (self.x_pos_target, self.y_pos_target)]
+            pos = list(mines) + [
+                (self.x_pos, self.y_pos),
+                (self.x_pos_target, self.y_pos_target),
+            ]
             if any(map(lambda p: (x - p[0]) ** 2 + (y - p[1]) ** 2 < 15 * 15, pos)):
                 continue
             mines.append((x, y))
         self.direction = random.uniform(0, 2 * np.pi)
         self.step = 0
         self.mines = mines
-        return self.observe(obs_config)
+        return self.observe()
 
-    def act(self, action: Action, obs_config: ObsFilter) -> Observation:
-        for action_name, chosen_actions in action.chosen_actions.items():
+    def _act(self, action: Dict[str, Action]) -> Observation:
+        for action_name, a in action.items():
+            assert isinstance(a, CategoricalAction)
             if action_name == "move":
-                action = chosen_actions[0][1]
-                if action == 0:
+                move = a.actions[0][1]
+                if move == 0:
                     self.direction -= np.pi / 8
-                elif action == 1:
+                elif move == 1:
                     self.x_pos += 3 * np.cos(self.direction)
                     self.y_pos += 3 * np.sin(self.direction)
-                elif action == 2:
+                elif move == 2:
                     self.direction += np.pi / 8
                 else:
                     raise ValueError(
-                        f"Invalid action {action} for action space {action_name}")
+                        f"Invalid action {move} for action space {action_name}"
+                    )
                 self.direction %= 2 * np.pi
             else:
                 raise ValueError(f"Unknown action type {action_name}")
 
         self.step += 1
 
-        return self.observe(obs_config)
+        return self.observe()
 
-    def observe(self, obs_config: ObsFilter, done: bool = False) -> Observation:
+    def observe(self, done: bool = False) -> Observation:
         if (self.x_pos_target - self.x_pos) ** 2 + (
-                self.y_pos_target - self.y_pos) ** 2 < 5 * 5:
+            self.y_pos_target - self.y_pos
+        ) ** 2 < 5 * 5:
             done = True
             reward = 1
-        elif any(map(lambda m: (self.x_pos - m[0]) ** 2 + (self.y_pos - m[1]) ** 2 < 5 * 5, self.mines)):
+        elif any(
+            map(
+                lambda m: (self.x_pos - m[0]) ** 2 + (self.y_pos - m[1]) ** 2 < 5 * 5,
+                self.mines,
+            )
+        ):
             done = True
             reward = 0
         else:
             done = False
             reward = 0
 
-        return self.filter_obs(Observation(
+        return Observation(
             entities=[
                 (
                     "Vehicle",
-                    np.array(
-                        [[self.x_pos, self.y_pos, self.direction, self.step]])
+                    np.array([[self.x_pos, self.y_pos, self.direction, self.step]]),
                 ),
                 (
                     "Mine",
-                    np.array([[x, y] for x, y in self.mines]) if len(
-                        self.mines) > 0 else np.zeros([0, 2])
+                    np.array([[x, y] for x, y in self.mines])
+                    if len(self.mines) > 0
+                    else np.zeros([0, 2]),
                 ),
-                (
-                    "Target",
-                    np.array(
-                        [[self.x_pos_target, self.y_pos_target]])
-                )
+                ("Target", np.array([[self.x_pos_target, self.y_pos_target]])),
             ],
             action_masks=[
-                ("move", ActionMask(actors=[0], mask=None)),
+                ("move", DenseCategoricalActionMask(actors=[0], mask=None)),
             ],
             ids=list(range(len(self.mines) + 2)),
             reward=reward,
             done=done,
-        ), obs_config)
+        )
