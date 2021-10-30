@@ -20,7 +20,6 @@ from entity_gym.environment import (
 
 
 def print_obs(obs: Observation, total_reward: float, obs_filter: ObsFilter):
-    total_reward += obs.reward
     print(f"Reward: {obs.reward}")
     print(f"Total reward: {total_reward}")
     entity_index = 0

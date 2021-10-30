@@ -3,6 +3,7 @@ import dataclasses
 from typing import Dict, List, Tuple
 import random
 import numpy as np
+from copy import deepcopy
 
 from entity_gym.environment import (
     ActionMask,
@@ -43,7 +44,7 @@ class MultiSnake(Environment):
     The game ends when a snake collides with another snake, runs into a wall, eats Food of another color, or all snakes reach a length of 11.
     """
 
-    def __init__(self, board_size: int = 10, num_snakes: int = 2):
+    def __init__(self, board_size: int = 10, num_snakes: int = 2, num_players: int = 1):
         """
         :param num_players: number of players
         :param board_size: size of the board
@@ -52,8 +53,12 @@ class MultiSnake(Environment):
         assert num_snakes < 10, f"num_snakes must be less than 10, got {num_snakes}"
         self.board_size = board_size
         self.num_snakes = num_snakes
+        self.num_players = num_players
         self.snakes: List[Snake] = []
         self.food: List[Food] = []
+        self.game_over = False
+        self.last_scores = [0] * self.num_players
+        self.scores = [0] * self.num_players
 
     @classmethod
     def state_space(cls) -> List[Entity]:
@@ -117,6 +122,7 @@ class MultiSnake(Environment):
         game_over = False
         reward = 0.0
         move_action = action["move"]
+        self.last_scores = deepcopy(self.scores)
         assert isinstance(move_action, CategoricalAction)
         for id, move in move_action.actions:
             snake = self.snakes[id]
@@ -140,25 +146,41 @@ class MultiSnake(Environment):
                         game_over = True
                     elif len(snake.segments) < 11:
                         ate_Food = True
-                        reward += 0.1 / self.num_snakes
+                        self.scores[id // self.num_players] += 0.1 / self.num_snakes
                     self.food.pop(i)
                     self._spawn_Food(snake.color)
                     break
             snake.segments.append((x, y))
             if not ate_Food:
                 snake.segments = snake.segments[1:]
-        if all(len(s.segments) >= 11 for s in self.snakes):
-            game_over = True
-        return self._observe(done=game_over, reward=reward)
+        for player in range(self.num_players):
+            snakes_per_player = self.num_snakes // self.num_players
+            if all(
+                len(s.segments) >= 11
+                for s in self.snakes[
+                    player * snakes_per_player : (player + 1) * snakes_per_player
+                ]
+            ):
+                game_over = True
+        return self._observe(done=game_over)
 
-    def _observe(self, done: bool = False, reward: float = 0) -> Observation:
+    def _observe(self, done: bool = False, player: int = 0) -> Observation:
+        color_offset = player * (self.num_snakes // self.num_players)
+
+        def cycle_color(color: int) -> int:
+            return (color - color_offset) % self.num_snakes
+
         return Observation(
             entities=[
                 (
                     "SnakeHead",
                     np.array(
                         [
-                            [s.segments[0][0], s.segments[0][1], s.color]
+                            [
+                                s.segments[0][0],
+                                s.segments[0][1],
+                                cycle_color(s.color),
+                            ]
                             for s in self.snakes
                         ]
                     ),
@@ -167,7 +189,7 @@ class MultiSnake(Environment):
                     "SnakeBody",
                     np.array(
                         [
-                            [sx, sy, snake.color]
+                            [sx, sy, cycle_color(snake.color)]
                             for snake in self.snakes
                             for sx, sy in snake.segments[1:]
                         ]
@@ -176,7 +198,14 @@ class MultiSnake(Environment):
                 (
                     "Food",
                     np.array(
-                        [[f.position[0], f.position[1], f.color] for f in self.food]
+                        [
+                            [
+                                f.position[0],
+                                f.position[1],
+                                cycle_color(f.color),
+                            ]
+                            for f in self.food
+                        ]
                     ),
                 ),
             ],
@@ -191,9 +220,58 @@ class MultiSnake(Environment):
                     ),
                 )
             ],
-            reward=reward,
+            reward=self.scores[player] - self.last_scores[player],
             done=done,
         )
 
 
-# Implements VecEnv directly to allow for multiple players without requiring proper multi-agent support.
+class MultiplayerMultiSnake(VecEnv):
+    """
+    Multiplayer version of multi-snake.
+    Implements VecEnv directly to allow for multiple players without requiring proper multi-agent support.
+    Each player controls and receives rewards for a subset of the snakes.
+    Only one player has to reache length 11 on all its snakes for the game to be over.
+    """
+
+    def __init__(
+        self,
+        board_size: int = 10,
+        num_snakes: int = 4,
+        num_players: int = 2,
+        num_envs: int = 1,
+    ):
+        assert num_snakes % num_players == 0
+        self.envs = [
+            MultiSnake(board_size, num_snakes, num_players) for _ in range(num_envs)
+        ]
+        self.num_players = num_players
+        self.num_snakes = num_snakes
+
+    def env_cls(cls) -> Type[Environment]:
+        return MultiSnake
+
+    def _reset(self) -> List[Observation]:
+        obs = []
+        for env in self.envs:
+            o = env._reset()
+            obs.append(o)
+            obs.append(o)
+        return obs
+
+    def _act(self, actions: List[Dict[str, Action]]) -> List[Observation]:
+        obs = []
+        for i, env in enumerate(self.envs):
+            acts = actions[i * self.num_players : (i + 1) * self.num_players]
+            combined_acts = {}
+            for act in acts:
+                for k, v in act.items():
+                    assert isinstance(v, CategoricalAction)
+                    if k not in combined_acts:
+                        combined_acts[k] = v
+                    else:
+                        combined_acts[k].actions.extend(v.actions)
+            env._act(combined_acts)
+            for j in range(self.num_players):
+                obs.append(env._observe(player=j))
+            if obs[0].done:
+                env.reset()
