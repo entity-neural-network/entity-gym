@@ -1,47 +1,59 @@
-from abc import ABC, abstractclassmethod, abstractmethod
-from collections import defaultdict
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Type
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Type, Union
 import numpy as np
 
 
 @dataclass
-class ActionSpace(ABC):
-    name: str
+class CategoricalActionSpace:
+    choices: List[str]
 
 
 @dataclass
-class CategoricalActionSpace(ActionSpace):
-    # TODO: get rid of n, just have a `choices` list?
-    n: int
-    choice_labels: Optional[List[str]] = None
-
-
-@dataclass
-class SelectEntityActionSpace(ActionSpace):
+class SelectEntityActionSpace:
     pass
+
+
+ActionSpace = Union[CategoricalActionSpace, SelectEntityActionSpace]
 
 
 @dataclass
 class ActionMask(ABC):
-    # Indices of entities which can perform the action on this time step.
+    """
+    Base class for action masks that specify what agents can perform a particular action.
+    """
+
     actors: Sequence[int]
+    """A list of agents that can perform the action."""
 
 
 @dataclass
 class DenseCategoricalActionMask(ActionMask):
-    # Action mask with dimensions (len(actors), n_choices). Each row is a
-    # binary vector indicating which choices are allowed for the corresponding
-    # actor.
+    """
+    Action mask for categorical action that specifies which agents can perform the action,
+    and includes a dense mask that further contraints the choices available to each agent.
+    """
+
     mask: Optional[np.ndarray] = None
+    """
+    A boolean array of shape (len(actors), len(choices)). If mask[i, j] is True, then
+    agent i can perform action j.
+    """
 
 
 @dataclass
 class DenseSelectEntityActionMask(ActionMask):
-    # Action mask with dimensions (len(actors), len(entities)). Each row is a
-    # binary vector indicating which entities can be selected by the corresponding
-    # actor.
+    """
+    Action mask for select entity action that specifies which agents can perform the action,
+    and includes a dense mask that further contraints what other entities can be selected by
+    each actor.
+    """
+
     mask: Optional[np.ndarray]
+    """
+    An boolean array of shape (len(actors), len(entities)). If mask[i, j] is True, then
+    agent i can select entity j.
+    """
 
 
 EntityID = Any
@@ -49,13 +61,15 @@ EntityID = Any
 
 @dataclass
 class Observation:
-    # Maps each entity type to an array with the features for each observed entity of that type.
-    entities: Sequence[Tuple[str, np.ndarray]]
-    # Maps each entity index to an opaque identifier used by the environment to
-    # identify that entity.
+    entities: Dict[str, np.ndarray]
+    """Maps each entity type to an array with the features for each observed entity of that type."""
     ids: Sequence[EntityID]
-    # Maps each action type to an action mask.
-    action_masks: Sequence[Tuple[str, ActionMask]]
+    """
+    Maps each entity index to an opaque identifier used by the environment to
+    identify that entity.
+    """
+    action_masks: Mapping[str, ActionMask]
+    """Maps each action to an action mask."""
     reward: float
     done: bool
     info: Any = None
@@ -63,29 +77,31 @@ class Observation:
 
 @dataclass
 class Entity:
-    name: str
     features: List[str]
 
 
 @dataclass
 class ObsFilter:
+    """
+    Allows filtering observations to only include a subset of entities and features.
+    """
+
     entity_to_feats: Dict[str, List[str]]
 
 
-class Action(ABC):
-    pass
+@dataclass
+class CategoricalAction:
+    actions: List[Tuple[EntityID, int]]
+    """Maps each actor to the index of the chosen action."""
 
 
 @dataclass
-class CategoricalAction(Action):
-    # Maps each actor to the index of the chosen action.
-    actions: Sequence[Tuple[EntityID, int]]
+class SelectEntityAction:
+    actions: List[Tuple[EntityID, EntityID]]
+    """Maps each actor to the entity they selected."""
 
 
-@dataclass
-class SelectEntityAction(Action):
-    # Maps each actor to the index of the selected entity.
-    actions: Sequence[Tuple[EntityID, EntityID]]
+Action = Union[CategoricalAction, SelectEntityAction]
 
 
 class Environment(ABC):
@@ -97,17 +113,19 @@ class Environment(ABC):
     This should be replaced by a more general multi-agent environment interface in the future.
     """
 
-    @abstractclassmethod
-    def state_space(cls) -> List[Entity]:
+    @classmethod
+    @abstractmethod
+    def state_space(cls) -> Dict[str, Entity]:
         """
-        Returns a list of entity types that can be observed in the environment.
+        Returns a dictionary mapping the name of observable entities to their type.
         """
         raise NotImplementedError
 
-    @abstractclassmethod
-    def action_space(cls) -> List[ActionSpace]:
+    @classmethod
+    @abstractmethod
+    def action_space(cls) -> Dict[str, ActionSpace]:
         """
-        Returns a list of actions that can be performed in the environment.
+        Returns a dictionary mapping the name of actions to their action space.
         """
         raise NotImplementedError
 
@@ -119,7 +137,7 @@ class Environment(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _act(self, action: Dict[str, Action]) -> Observation:
+    def _act(self, action: Mapping[str, Action]) -> Observation:
         """
         Performs the given action and returns the resulting observation.
 
@@ -127,14 +145,6 @@ class Environment(ABC):
             action: Maps the name of each action type to the action to perform.
         """
         raise NotImplementedError
-
-    @classmethod
-    def state_space_dict(cls) -> Dict[str, Entity]:
-        return {e.name: e for e in cls.state_space()}
-
-    @classmethod
-    def action_space_dict(cls) -> Dict[str, ActionSpace]:
-        return {a.name: a for a in cls.action_space()}
 
     def reset(self, obs_filter: ObsFilter) -> Observation:
         return self.__class__.filter_obs(self._reset(), obs_filter)
@@ -145,14 +155,15 @@ class Environment(ABC):
     @classmethod
     def filter_obs(cls, obs: Observation, obs_filter: ObsFilter) -> Observation:
         selectors = cls._compile_feature_filter(obs_filter)
-        entities = []
-        for entity_name, entity_features in obs.entities:
-            entities.append((entity_name, entity_features[:, selectors[entity_name]]))
+        entities = {
+            entity_name: entity_features[:, selectors[entity_name]]
+            for entity_name, entity_features in obs.entities.items()
+        }
         return Observation(entities, obs.ids, obs.action_masks, obs.reward, obs.done)
 
     @classmethod
     def _compile_feature_filter(cls, obs_filter: ObsFilter) -> Dict[str, np.ndarray]:
-        entity_dict = cls.state_space_dict()
+        entity_dict = cls.state_space()
         feature_selection = {}
         for entity_name, entity_features in obs_filter.entity_to_feats.items():
             entity = entity_dict[entity_name]
@@ -163,7 +174,8 @@ class Environment(ABC):
 
 
 class VecEnv(ABC):
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def env_cls(cls) -> Type[Environment]:
         """
         Returns the class of the underlying environment.
@@ -189,7 +201,7 @@ class VecEnv(ABC):
         return [self.__class__.env_cls().filter_obs(o, obs_filter) for o in obs]
 
 
-class VecEnvWrapper(VecEnv):
+class EnvList(VecEnv):
     def __init__(self, envs: List[Environment]):
         self.envs = envs
         self.cls = self.envs[0].__class__

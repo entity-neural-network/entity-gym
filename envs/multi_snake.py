@@ -1,12 +1,10 @@
 from dataclasses import dataclass
-import dataclasses
-from typing import Dict, List, Tuple
+from typing import Dict, List, Mapping, Tuple
 import random
 import numpy as np
 from copy import deepcopy
 
 from entity_gym.environment import (
-    ActionMask,
     CategoricalAction,
     DenseCategoricalActionMask,
     Entity,
@@ -14,7 +12,6 @@ from entity_gym.environment import (
     Type,
     CategoricalActionSpace,
     ActionSpace,
-    ObsFilter,
     Observation,
     Action,
     VecEnv,
@@ -61,33 +58,22 @@ class MultiSnake(Environment):
         self.scores = [0] * self.num_players
 
     @classmethod
-    def state_space(cls) -> List[Entity]:
-        return [
-            Entity(
-                name="SnakeHead",
-                features=["x", "y", "color"],
-            ),
-            Entity(
-                name="SnakeBody",
-                features=["x", "y", "color"],
-            ),
-            Entity(
-                name="Food",
-                features=["x", "y", "color"],
-            ),
-        ]
+    def state_space(cls) -> Dict[str, Entity]:
+        return {
+            "SnakeHead": Entity(["x", "y", "color"]),
+            "SnakeBody": Entity(["x", "y", "color"]),
+            "Food": Entity(["x", "y", "color"]),
+        }
 
     @classmethod
-    def action_space(cls) -> List[ActionSpace]:
-        return [
-            CategoricalActionSpace(
-                name="move",
-                n=4,
-                choice_labels=["up", "down", "left", "right"],
+    def action_space(cls) -> Dict[str, ActionSpace]:
+        return {
+            "move": CategoricalActionSpace(
+                choices=["up", "down", "left", "right"],
             ),
-        ]
+        }
 
-    def _spawn_snake(self, color: int):
+    def _spawn_snake(self, color: int) -> None:
         while True:
             x = random.randint(0, self.board_size - 1)
             y = random.randint(0, self.board_size - 1)
@@ -98,7 +84,7 @@ class MultiSnake(Environment):
             self.snakes.append(Snake(color, [(x, y)]))
             break
 
-    def _spawn_Food(self, color: int):
+    def _spawn_food(self, color: int) -> None:
         while True:
             x = random.randint(0, self.board_size - 1)
             y = random.randint(0, self.board_size - 1)
@@ -115,10 +101,10 @@ class MultiSnake(Environment):
         for i in range(self.num_snakes):
             self._spawn_snake(i)
         for i in range(self.num_snakes):
-            self._spawn_Food(i)
+            self._spawn_food(i)
         return self._observe()
 
-    def _act(self, action: Dict[str, Action]) -> Observation:
+    def _act(self, action: Mapping[str, Action]) -> Observation:
         game_over = False
         reward = 0.0
         move_action = action["move"]
@@ -148,7 +134,7 @@ class MultiSnake(Environment):
                         ate_Food = True
                         self.scores[id // self.num_players] += 0.1 / self.num_snakes
                     self.food.pop(i)
-                    self._spawn_Food(snake.color)
+                    self._spawn_food(snake.color)
                     break
             snake.segments.append((x, y))
             if not ate_Food:
@@ -171,55 +157,43 @@ class MultiSnake(Environment):
             return (color - color_offset) % self.num_snakes
 
         return Observation(
-            entities=[
-                (
-                    "SnakeHead",
-                    np.array(
+            entities={
+                "SnakeHead": np.array(
+                    [
                         [
-                            [
-                                s.segments[0][0],
-                                s.segments[0][1],
-                                cycle_color(s.color),
-                            ]
-                            for s in self.snakes
+                            s.segments[0][0],
+                            s.segments[0][1],
+                            cycle_color(s.color),
                         ]
-                    ),
+                        for s in self.snakes
+                    ]
                 ),
-                (
-                    "SnakeBody",
-                    np.array(
+                "SnakeBody": np.array(
+                    [
+                        [sx, sy, cycle_color(snake.color)]
+                        for snake in self.snakes
+                        for sx, sy in snake.segments[1:]
+                    ]
+                ).reshape(-1, 3),
+                "Food": np.array(
+                    [
                         [
-                            [sx, sy, cycle_color(snake.color)]
-                            for snake in self.snakes
-                            for sx, sy in snake.segments[1:]
+                            f.position[0],
+                            f.position[1],
+                            cycle_color(f.color),
                         ]
-                    ).reshape(-1, 3),
+                        for f in self.food
+                    ]
                 ),
-                (
-                    "Food",
-                    np.array(
-                        [
-                            [
-                                f.position[0],
-                                f.position[1],
-                                cycle_color(f.color),
-                            ]
-                            for f in self.food
-                        ]
-                    ),
-                ),
-            ],
+            },
             ids=list(
                 range(sum([len(s.segments) for s in self.snakes]) + len(self.food))
             ),
-            action_masks=[
-                (
-                    "move",
-                    DenseCategoricalActionMask(
-                        actors=list(range(self.num_snakes)),
-                    ),
-                )
-            ],
+            action_masks={
+                "move": DenseCategoricalActionMask(
+                    actors=list(range(self.num_snakes)),
+                ),
+            },
             reward=self.scores[player] - self.last_scores[player],
             done=done,
         )
@@ -247,6 +221,7 @@ class MultiplayerMultiSnake(VecEnv):
         self.num_players = num_players
         self.num_snakes = num_snakes
 
+    @classmethod
     def env_cls(cls) -> Type[Environment]:
         return MultiSnake
 
@@ -274,4 +249,5 @@ class MultiplayerMultiSnake(VecEnv):
             for j in range(self.num_players):
                 obs.append(env._observe(player=j))
             if obs[0].done:
-                env.reset()
+                env._reset()
+        return obs

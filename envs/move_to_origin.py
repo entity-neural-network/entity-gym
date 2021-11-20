@@ -1,18 +1,15 @@
 from dataclasses import dataclass
 import numpy as np
 import random
-from typing import Dict, List
+from typing import Dict, Mapping
 
 from entity_gym.environment import (
-    ActionMask,
     CategoricalAction,
     DenseCategoricalActionMask,
     Entity,
     Environment,
-    Type,
     CategoricalActionSpace,
     ActionSpace,
-    ObsFilter,
     Observation,
     Action,
 )
@@ -34,21 +31,16 @@ class MoveToOrigin(Environment):
     step: int = 0
 
     @classmethod
-    def state_space(cls) -> List[Entity]:
-        return [
-            Entity(
-                name="Spaceship",
-                features=["x_pos", "y_pos", "x_velocity", "y_velocity", "step"],
-            ),
-        ]
+    def state_space(cls) -> Dict[str, Entity]:
+        return {
+            "Spaceship": Entity(["x_pos", "y_pos", "x_velocity", "y_velocity", "step"]),
+        }
 
     @classmethod
-    def action_space(cls) -> List[ActionSpace]:
-        return [
-            CategoricalActionSpace(
-                name="horizontal_thruster",
-                n=5,
-                choice_labels=[
+    def action_space(cls) -> Dict[str, ActionSpace]:
+        return {
+            "horizontal_thruster": CategoricalActionSpace(
+                [
                     "100% right",
                     "10% right",
                     "hold",
@@ -56,12 +48,10 @@ class MoveToOrigin(Environment):
                     "100% left",
                 ],
             ),
-            CategoricalActionSpace(
-                name="vertical_thruster",
-                n=5,
-                choice_labels=["100% up", "10% up", "hold", "10% down", "100% down"],
+            "vertical_thruster": CategoricalActionSpace(
+                ["100% up", "10% up", "hold", "10% down", "100% down"],
             ),
-        ]
+        }
 
     def _reset(self) -> Observation:
         angle = random.uniform(0, 2 * np.pi)
@@ -73,7 +63,7 @@ class MoveToOrigin(Environment):
         self.y_velocity = 0
         return self.observe()
 
-    def _act(self, action: Dict[str, Action]) -> Observation:
+    def _act(self, action: Mapping[str, Action]) -> Observation:
         self.step += 1
 
         for action_name, a in action.items():
@@ -120,32 +110,25 @@ class MoveToOrigin(Environment):
 
     def observe(self, done: bool = False) -> Observation:
         return Observation(
-            entities=[
-                (
-                    "Spaceship",
-                    np.array(
+            entities={
+                "Spaceship": np.array(
+                    [
                         [
-                            [
-                                self.x_pos,
-                                self.y_pos,
-                                self.x_velocity,
-                                self.y_velocity,
-                                self.step,
-                            ]
+                            self.x_pos,
+                            self.y_pos,
+                            self.x_velocity,
+                            self.y_velocity,
+                            self.step,
                         ]
-                    ),
+                    ]
                 ),
-            ],
-            action_masks=[
-                (
-                    "horizontal_thruster",
-                    DenseCategoricalActionMask(actors=[0], mask=None),
+            },
+            action_masks={
+                "horizontal_thruster": DenseCategoricalActionMask(
+                    actors=[0], mask=None
                 ),
-                (
-                    "vertical_thruster",
-                    DenseCategoricalActionMask(actors=[0], mask=None),
-                ),
-            ],
+                "vertical_thruster": DenseCategoricalActionMask(actors=[0], mask=None),
+            },
             ids=[0],
             reward=(self.last_x_pos ** 2 + self.last_y_pos ** 2) ** 0.5
             - (self.x_pos ** 2 + self.y_pos ** 2) ** 0.5,

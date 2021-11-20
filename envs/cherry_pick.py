@@ -1,19 +1,15 @@
 from dataclasses import dataclass, field
 import numpy as np
-import random
-from typing import Dict, List
+from typing import Dict, List, Mapping
 
 from entity_gym.environment import (
     DenseSelectEntityActionMask,
     Entity,
     Environment,
     SelectEntityAction,
-    Type,
     SelectEntityActionSpace,
     ActionSpace,
-    ObsFilter,
     Observation,
-    ActionMask,
     Action,
 )
 
@@ -33,21 +29,15 @@ class CherryPick(Environment):
     step: int = 0
 
     @classmethod
-    def state_space(cls) -> List[Entity]:
-        return [
-            Entity(
-                name="Cherry",
-                features=["quality"],
-            ),
-            Entity(
-                name="Player",
-                features=[],
-            ),
-        ]
+    def state_space(cls) -> Dict[str, Entity]:
+        return {
+            "Cherry": Entity(["quality"]),
+            "Player": Entity([]),
+        }
 
     @classmethod
-    def action_space(cls) -> List[ActionSpace]:
-        return [SelectEntityActionSpace("Pick Cherry")]
+    def action_space(cls) -> Dict[str, ActionSpace]:
+        return {"Pick Cherry": SelectEntityActionSpace()}
 
     def _reset(self) -> Observation:
         cherries = [np.random.normal() for _ in range(32)]
@@ -61,27 +51,24 @@ class CherryPick(Environment):
 
     def observe(self) -> Observation:
         return Observation(
-            entities=[
-                ("Cherry", np.array(self.cherries).reshape(-1, 1)),
-                ("Player", np.zeros([1, 0])),
-            ],
+            entities={
+                "Cherry": np.array(self.cherries).reshape(-1, 1),
+                "Player": np.zeros([1, 0]),
+            },
             ids=np.arange(len(self.cherries) + 1),
-            action_masks=[
-                (
-                    "Pick Cherry",
-                    DenseSelectEntityActionMask(
-                        actors=[len(self.cherries)],
-                        mask=(
-                            np.arange(len(self.cherries) + 1) < len(self.cherries)
-                        ).astype(np.float32),
-                    ),
-                )
-            ],
+            action_masks={
+                "Pick Cherry": DenseSelectEntityActionMask(
+                    actors=[len(self.cherries)],
+                    mask=(
+                        np.arange(len(self.cherries) + 1) < len(self.cherries)
+                    ).astype(np.float32),
+                ),
+            },
             reward=self.last_reward,
             done=self.step == 16,
         )
 
-    def _act(self, action: Dict[str, Action]) -> Observation:
+    def _act(self, action: Mapping[str, Action]) -> Observation:
         for action_name, a in action.items():
             assert isinstance(a, SelectEntityAction)
             assert action_name == "Pick Cherry"

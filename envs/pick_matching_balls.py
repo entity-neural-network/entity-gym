@@ -1,20 +1,16 @@
 from dataclasses import dataclass, field
 import numpy as np
 import random
-from typing import Dict, List
+from typing import Dict, List, Mapping
 
 from entity_gym.environment import (
-    CategoricalAction,
-    DenseCategoricalActionMask,
     DenseSelectEntityActionMask,
     Entity,
     Environment,
-    Type,
+    SelectEntityAction,
     SelectEntityActionSpace,
     ActionSpace,
-    ObsFilter,
     Observation,
-    ActionMask,
     Action,
 )
 
@@ -37,22 +33,18 @@ class PickMatchingBalls(Environment):
     balls: List[Ball] = field(default_factory=list)
 
     @classmethod
-    def state_space(cls) -> List[Entity]:
-        return [
-            Entity(
-                name="Ball",
+    def state_space(cls) -> Dict[str, Entity]:
+        return {
+            "Ball": Entity(
                 # TODO: better support for categorical features
-                features=["color", "selected"],
+                ["color", "selected"],
             ),
-            Entity(
-                name="Player",
-                features=[],
-            ),
-        ]
+            "Player": Entity([]),
+        }
 
     @classmethod
-    def action_space(cls) -> List[ActionSpace]:
-        return [SelectEntityActionSpace("Pick Ball")]
+    def action_space(cls) -> Dict[str, ActionSpace]:
+        return {"Pick Ball": SelectEntityActionSpace()}
 
     def _reset(self) -> Observation:
         self.balls = [Ball(color=random.randint(0, 5)) for _ in range(32)]
@@ -70,32 +62,28 @@ class PickMatchingBalls(Environment):
             reward = 0.0
 
         return Observation(
-            entities=[
-                (
-                    "Ball",
-                    np.array([[float(b.color), float(b.selected)] for b in self.balls]),
+            entities={
+                "Ball": np.array(
+                    [[float(b.color), float(b.selected)] for b in self.balls]
                 ),
-                ("Player", np.zeros([1, 0])),
-            ],
+                "Player": np.zeros([1, 0]),
+            },
             ids=np.arange(len(self.balls) + 1),
-            action_masks=[
-                (
-                    "Pick Ball",
-                    DenseSelectEntityActionMask(
-                        actors=[len(self.balls)],
-                        mask=np.array(
-                            [not b.selected for b in self.balls] + [False]
-                        ).astype(np.float32),
-                    ),
+            action_masks={
+                "Pick Ball": DenseSelectEntityActionMask(
+                    actors=[len(self.balls)],
+                    mask=np.array(
+                        [not b.selected for b in self.balls] + [False]
+                    ).astype(np.float32),
                 ),
-            ],
+            },
             reward=reward,
             done=done,
         )
 
-    def _act(self, actions: Dict[str, Action]) -> Observation:
+    def _act(self, actions: Mapping[str, Action]) -> Observation:
         action = actions["Pick Ball"]
-        assert isinstance(action, CategoricalAction)
+        assert isinstance(action, SelectEntityAction)
         for _, selected_ball in action.actions:
             assert not self.balls[selected_ball].selected
             self.last_reward = self.balls[selected_ball].selected = True

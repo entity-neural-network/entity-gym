@@ -1,18 +1,15 @@
 from dataclasses import dataclass, field
 import numpy as np
 import random
-from typing import Dict, List, Tuple
+from typing import Dict, List, Mapping, Tuple
 
 from entity_gym.environment import (
-    ActionMask,
     CategoricalAction,
     DenseCategoricalActionMask,
     Entity,
     Environment,
-    Type,
     CategoricalActionSpace,
     ActionSpace,
-    ObsFilter,
     Observation,
     Action,
 )
@@ -35,31 +32,20 @@ class Minefield(Environment):
     step: int = 0
 
     @classmethod
-    def state_space(cls) -> List[Entity]:
-        return [
-            Entity(
-                name="Vehicle",
-                features=["x_pos", "y_pos", "direction", "step"],
-            ),
-            Entity(
-                name="Mine",
-                features=["x_pos", "y_pos"],
-            ),
-            Entity(
-                name="Target",
-                features=["x_pos", "y_pos"],
-            ),
-        ]
+    def state_space(cls) -> Dict[str, Entity]:
+        return {
+            "Vehicle": Entity(["x_pos", "y_pos", "direction", "step"]),
+            "Mine": Entity(["x_pos", "y_pos"]),
+            "Target": Entity(["x_pos", "y_pos"]),
+        }
 
     @classmethod
-    def action_space(cls) -> List[ActionSpace]:
-        return [
-            CategoricalActionSpace(
-                name="move",
-                n=3,
-                choice_labels=["turn left", "move forward", "turn right"],
+    def action_space(cls) -> Dict[str, ActionSpace]:
+        return {
+            "move": CategoricalActionSpace(
+                ["turn left", "move forward", "turn right"],
             )
-        ]
+        }
 
     def _reset(self) -> Observation:
         self.x_pos, self.y_pos = (random.uniform(-100, 100), random.uniform(-100, 100))
@@ -83,7 +69,7 @@ class Minefield(Environment):
         self.mines = mines
         return self.observe()
 
-    def _act(self, action: Dict[str, Action]) -> Observation:
+    def _act(self, action: Mapping[str, Action]) -> Observation:
         for action_name, a in action.items():
             assert isinstance(a, CategoricalAction)
             if action_name == "move":
@@ -126,22 +112,18 @@ class Minefield(Environment):
             reward = 0
 
         return Observation(
-            entities=[
-                (
-                    "Vehicle",
-                    np.array([[self.x_pos, self.y_pos, self.direction, self.step]]),
+            entities={
+                "Vehicle": np.array(
+                    [[self.x_pos, self.y_pos, self.direction, self.step]]
                 ),
-                (
-                    "Mine",
-                    np.array([[x, y] for x, y in self.mines])
-                    if len(self.mines) > 0
-                    else np.zeros([0, 2]),
-                ),
-                ("Target", np.array([[self.x_pos_target, self.y_pos_target]])),
-            ],
-            action_masks=[
-                ("move", DenseCategoricalActionMask(actors=[0], mask=None)),
-            ],
+                "Mine": np.array([[x, y] for x, y in self.mines])
+                if len(self.mines) > 0
+                else np.zeros([0, 2]),
+                "Target": np.array([[self.x_pos_target, self.y_pos_target]]),
+            },
+            action_masks={
+                "move": DenseCategoricalActionMask(actors=[0], mask=None),
+            },
             ids=list(range(len(self.mines) + 2)),
             reward=reward,
             done=done,
