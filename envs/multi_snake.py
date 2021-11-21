@@ -204,7 +204,7 @@ class MultiplayerMultiSnake(VecEnv):
     Multiplayer version of multi-snake.
     Implements VecEnv directly to allow for multiple players without requiring proper multi-agent support.
     Each player controls and receives rewards for a subset of the snakes.
-    Only one player has to reache length 11 on all its snakes for the game to be over.
+    Only one player has to reach length 11 on all its snakes for the game to be over.
     """
 
     def __init__(
