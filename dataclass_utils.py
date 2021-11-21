@@ -27,5 +27,5 @@ def extract_features(
     for entity_name, features in obs_filter.entity_to_feats.items():
         selectors[entity_name] = np.array(
             [[getattr(e, f) for f in features] for e in entities[entity_name]],
-        )
+        ).reshape(-1, len(features))
     return selectors
