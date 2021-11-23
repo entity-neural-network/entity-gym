@@ -15,7 +15,7 @@ def state_space_from_dataclasses(*dss: Type) -> Dict[str, Entity]:
             raise ValueError(f"{ds} is not a dataclass")
         # TODO: check field types are valid
         state_space[ds.__name__] = Entity(
-            features=list(ds.__dataclass_fields__.keys()),
+            features=list([key for key in ds.__dataclass_fields__.keys() if not key.startswith("_")]),
         )
     return state_space
 
