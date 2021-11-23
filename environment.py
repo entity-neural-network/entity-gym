@@ -172,6 +172,14 @@ class Environment(ABC):
             )
         return feature_selection
 
+    @classmethod
+    def full_obs_filter(cls) -> ObsFilter:
+        return ObsFilter(
+            entity_to_feats={
+                name: entity.features for name, entity in cls.state_space().items()
+            }
+        )
+
 
 class VecEnv(ABC):
     @classmethod

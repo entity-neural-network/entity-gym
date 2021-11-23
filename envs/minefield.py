@@ -10,9 +10,31 @@ from entity_gym.environment import (
     Environment,
     CategoricalActionSpace,
     ActionSpace,
+    ObsFilter,
     Observation,
     Action,
 )
+from entity_gym.dataclass_utils import state_space_from_dataclasses, extract_features
+
+
+@dataclass
+class Vehicle:
+    x_pos: float = 0.0
+    y_pos: float = 0.0
+    direction: float = 0.0
+    step: int = 0
+
+
+@dataclass
+class Target:
+    x_pos: float = 0.0
+    y_pos: float = 0.0
+
+
+@dataclass
+class Mine:
+    x_pos: float = 0.0
+    y_pos: float = 0.0
 
 
 @dataclass
@@ -23,21 +45,13 @@ class Minefield(Environment):
     The available actions either turn the vehicle left, right, or go straight.
     """
 
-    x_pos: float = 0.0
-    y_pos: float = 0.0
-    direction: float = 0.0
-    x_pos_target: float = 0.0
-    y_pos_target: float = 0.0
-    mines: List[Tuple[float, float]] = field(default_factory=list)
-    step: int = 0
+    vehicle: Vehicle = field(default_factory=Vehicle)
+    target: Target = field(default_factory=Target)
+    mine: Mine = field(default_factory=Mine)
 
     @classmethod
     def state_space(cls) -> Dict[str, Entity]:
-        return {
-            "Vehicle": Entity(["x_pos", "y_pos", "direction", "step"]),
-            "Mine": Entity(["x_pos", "y_pos"]),
-            "Target": Entity(["x_pos", "y_pos"]),
-        }
+        return state_space_from_dataclasses(Vehicle, Mine, Target)
 
     @classmethod
     def action_space(cls) -> Dict[str, ActionSpace]:
@@ -47,29 +61,35 @@ class Minefield(Environment):
             )
         }
 
-    def _reset(self) -> Observation:
-        self.x_pos, self.y_pos = (random.uniform(-100, 100), random.uniform(-100, 100))
-        self.x_pos_target, self.y_pos_target = (
+    def reset(self, obs_filter: ObsFilter) -> Observation:
+        self.vehicle.x_pos, self.vehicle.y_pos = (
             random.uniform(-100, 100),
             random.uniform(-100, 100),
         )
-        mines: List[Tuple[float, float]] = []
+        self.target.x_pos, self.target.y_pos = (
+            random.uniform(-100, 100),
+            random.uniform(-100, 100),
+        )
+        mines: List[Mine] = []
         for _ in range(10):
             x, y = (random.uniform(-100, 100), random.uniform(-100, 100))
             # Check that the mine is not too close to the vehicle, target, or any other mine
-            pos = list(mines) + [
-                (self.x_pos, self.y_pos),
-                (self.x_pos_target, self.y_pos_target),
+            pos = [(m.x_pos, m.y_pos) for m in mines] + [
+                (self.vehicle.x_pos, self.vehicle.y_pos),
+                (self.target.x_pos, self.target.y_pos),
             ]
             if any(map(lambda p: (x - p[0]) ** 2 + (y - p[1]) ** 2 < 15 * 15, pos)):
                 continue
-            mines.append((x, y))
+            mines.append(Mine(x, y))
         self.direction = random.uniform(0, 2 * np.pi)
         self.step = 0
         self.mines = mines
-        return self.observe()
+        return self.observe(obs_filter)
 
-    def _act(self, action: Mapping[str, Action]) -> Observation:
+    def _reset(self) -> Observation:
+        return self.reset(Minefield.full_obs_filter())
+
+    def act(self, action: Mapping[str, Action], obs_filter: ObsFilter) -> Observation:
         for action_name, a in action.items():
             assert isinstance(a, CategoricalAction)
             if action_name == "move":
@@ -77,8 +97,8 @@ class Minefield(Environment):
                 if move == 0:
                     self.direction -= np.pi / 8
                 elif move == 1:
-                    self.x_pos += 3 * np.cos(self.direction)
-                    self.y_pos += 3 * np.sin(self.direction)
+                    self.vehicle.x_pos += 3 * np.cos(self.direction)
+                    self.vehicle.y_pos += 3 * np.sin(self.direction)
                 elif move == 2:
                     self.direction += np.pi / 8
                 else:
@@ -91,17 +111,25 @@ class Minefield(Environment):
 
         self.step += 1
 
-        return self.observe()
+        return self.observe(obs_filter)
 
-    def observe(self, done: bool = False) -> Observation:
-        if (self.x_pos_target - self.x_pos) ** 2 + (
-            self.y_pos_target - self.y_pos
+    def _act(self, action: Mapping[str, Action]) -> Observation:
+        return self.act(
+            action,
+            Minefield.full_obs_filter(),
+        )
+
+    def observe(self, obs_filter: ObsFilter, done: bool = False) -> Observation:
+        if (self.target.x_pos - self.vehicle.x_pos) ** 2 + (
+            self.target.y_pos - self.vehicle.y_pos
         ) ** 2 < 5 * 5:
             done = True
             reward = 1
         elif any(
             map(
-                lambda m: (self.x_pos - m[0]) ** 2 + (self.y_pos - m[1]) ** 2 < 5 * 5,
+                lambda m: (self.vehicle.x_pos - m.x_pos) ** 2
+                + (self.vehicle.y_pos - m.y_pos) ** 2
+                < 5 * 5,
                 self.mines,
             )
         ):
@@ -112,15 +140,14 @@ class Minefield(Environment):
             reward = 0
 
         return Observation(
-            entities={
-                "Vehicle": np.array(
-                    [[self.x_pos, self.y_pos, self.direction, self.step]]
-                ),
-                "Mine": np.array([[x, y] for x, y in self.mines])
-                if len(self.mines) > 0
-                else np.zeros([0, 2]),
-                "Target": np.array([[self.x_pos_target, self.y_pos_target]]),
-            },
+            entities=extract_features(
+                {
+                    "Mine": self.mines,
+                    "Vehicle": [self.vehicle],
+                    "Target": [self.target],
+                },
+                obs_filter,
+            ),
             action_masks={
                 "move": DenseCategoricalActionMask(actors=[0], mask=None),
             },
