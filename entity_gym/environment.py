@@ -182,7 +182,6 @@ class Environment(ABC):
 
 
 class VecEnv(ABC):
-    @classmethod
     @abstractmethod
     def env_cls(cls) -> Type[Environment]:
         """
@@ -200,13 +199,13 @@ class VecEnv(ABC):
 
     def reset(self, obs_config: ObsFilter) -> List[Observation]:
         obs = self._reset()
-        return [self.__class__.env_cls().filter_obs(o, obs_config) for o in obs]
+        return [self.env_cls().filter_obs(o, obs_config) for o in obs]
 
     def act(
         self, actions: List[Dict[str, Action]], obs_filter: ObsFilter
     ) -> List[Observation]:
         obs = self._act(actions)
-        return [self.__class__.env_cls().filter_obs(o, obs_filter) for o in obs]
+        return [self.env_cls().filter_obs(o, obs_filter) for o in obs]
 
 
 class EnvList(VecEnv):
@@ -214,7 +213,6 @@ class EnvList(VecEnv):
         self.envs = envs
         self.cls = self.envs[0].__class__
 
-    @classmethod
     def env_cls(cls) -> Type[Environment]:
         return cls.cls
 
@@ -222,4 +220,14 @@ class EnvList(VecEnv):
         return [e._reset() for e in self.envs]
 
     def _act(self, actions: List[Dict[str, Action]]) -> List[Observation]:
-        return [e._act(a) for e, a in zip(self.envs, actions)]
+        observations = []
+        for e, a in zip(self.envs, actions):
+            obs = e._act(a)
+            if obs.done:
+                # TODO: something is wrong with the interface here
+                new_obs = e._reset()
+                new_obs.done = True
+                observations.append(new_obs)
+            else:
+                observations.append(obs)
+        return observations

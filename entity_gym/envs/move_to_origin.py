@@ -40,13 +40,7 @@ class MoveToOrigin(Environment):
     def action_space(cls) -> Dict[str, ActionSpace]:
         return {
             "horizontal_thruster": CategoricalActionSpace(
-                [
-                    "100% right",
-                    "10% right",
-                    "hold",
-                    "10% left",
-                    "100% left",
-                ],
+                ["100% right", "10% right", "hold", "10% left", "100% left",],
             ),
             "vertical_thruster": CategoricalActionSpace(
                 ["100% up", "10% up", "hold", "10% down", "100% down"],
@@ -61,13 +55,14 @@ class MoveToOrigin(Environment):
         self.last_y_pos = self.y_pos
         self.x_velocity = 0
         self.y_velocity = 0
+        self.step = 0
         return self.observe()
 
     def _act(self, action: Mapping[str, Action]) -> Observation:
         self.step += 1
 
         for action_name, a in action.items():
-            assert isinstance(a, CategoricalAction)
+            assert isinstance(a, CategoricalAction), f"{a} is not a CategoricalAction"
             if action_name == "horizontal_thruster":
                 for actor_id, choice_id in a.actions:
                     if choice_id == 0:
