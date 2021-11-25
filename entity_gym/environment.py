@@ -23,8 +23,10 @@ class ActionMask(ABC):
     Base class for action masks that specify what agents can perform a particular action.
     """
 
-    actors: Sequence[int]
-    """A list of agents that can perform the action."""
+    actors: np.ndarray
+    """
+    The indices of the entities that can perform the action.
+    """
 
 
 @dataclass
@@ -91,8 +93,14 @@ class ObsFilter:
 
 @dataclass
 class CategoricalAction:
+    # TODO: figure out best representation
     actions: List[Tuple[EntityID, int]]
-    """Maps each actor to the index of the chosen action."""
+    # actions: np.ndarray
+    """
+    Maps each actor to the index of the chosen action.
+    Given `Observation` obs and `ActionMask` mask, the `EntityID`s of the corresponding
+    actors are given as `obs.ids[mask.actors]`.
+    """
 
 
 @dataclass
@@ -194,7 +202,7 @@ class VecEnv(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _act(self, actions: List[Dict[str, Action]]) -> List[Observation]:
+    def _act(self, actions: Sequence[Mapping[str, Action]]) -> List[Observation]:
         raise NotImplementedError
 
     def reset(self, obs_config: ObsFilter) -> List[Observation]:
@@ -202,7 +210,7 @@ class VecEnv(ABC):
         return [self.env_cls().filter_obs(o, obs_config) for o in obs]
 
     def act(
-        self, actions: List[Dict[str, Action]], obs_filter: ObsFilter
+        self, actions: Sequence[Mapping[str, Action]], obs_filter: ObsFilter
     ) -> List[Observation]:
         obs = self._act(actions)
         return [self.env_cls().filter_obs(o, obs_filter) for o in obs]
@@ -219,7 +227,7 @@ class EnvList(VecEnv):
     def _reset(self) -> List[Observation]:
         return [e._reset() for e in self.envs]
 
-    def _act(self, actions: List[Dict[str, Action]]) -> List[Observation]:
+    def _act(self, actions: Sequence[Mapping[str, Action]]) -> List[Observation]:
         observations = []
         for e, a in zip(self.envs, actions):
             obs = e._act(a)
