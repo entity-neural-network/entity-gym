@@ -56,9 +56,7 @@ class Minefield(Environment):
     @classmethod
     def action_space(cls) -> Dict[str, ActionSpace]:
         return {
-            "move": CategoricalActionSpace(
-                ["turn left", "move forward", "turn right"],
-            )
+            "move": CategoricalActionSpace(["turn left", "move forward", "turn right"],)
         }
 
     def reset(self, obs_filter: ObsFilter) -> Observation:
@@ -114,10 +112,7 @@ class Minefield(Environment):
         return self.observe(obs_filter)
 
     def _act(self, action: Mapping[str, Action]) -> Observation:
-        return self.act(
-            action,
-            Minefield.full_obs_filter(),
-        )
+        return self.act(action, Minefield.full_obs_filter(),)
 
     def observe(self, obs_filter: ObsFilter, done: bool = False) -> Observation:
         if (self.target.x_pos - self.vehicle.x_pos) ** 2 + (
@@ -149,7 +144,7 @@ class Minefield(Environment):
                 obs_filter,
             ),
             action_masks={
-                "move": DenseCategoricalActionMask(actors=[0], mask=None),
+                "move": DenseCategoricalActionMask(actors=np.array([0]), mask=None),
             },
             ids=list(range(len(self.mines) + 2)),
             reward=reward,
