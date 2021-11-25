@@ -120,9 +120,11 @@ class MoveToOrigin(Environment):
             },
             action_masks={
                 "horizontal_thruster": DenseCategoricalActionMask(
-                    actors=[0], mask=None
+                    actors=np.array([0]), mask=None
                 ),
-                "vertical_thruster": DenseCategoricalActionMask(actors=[0], mask=None),
+                "vertical_thruster": DenseCategoricalActionMask(
+                    actors=np.array([0]), mask=None
+                ),
             },
             ids=[0],
             reward=(self.last_x_pos ** 2 + self.last_y_pos ** 2) ** 0.5

@@ -71,7 +71,7 @@ class PickMatchingBalls(Environment):
             ids=np.arange(len(self.balls) + 1),
             action_masks={
                 "Pick Ball": DenseSelectEntityActionMask(
-                    actors=[len(self.balls)],
+                    actors=np.array([len(self.balls)]),
                     mask=np.array(
                         [not b.selected for b in self.balls] + [False]
                     ).astype(np.float32),
