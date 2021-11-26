@@ -1,0 +1,37 @@
+name: Python package
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ hashFiles('entity_gym/setup.py') }}-${{ hashFiles('ppo/requirements.txt') }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black==19.10b0 pytest mypy
+          pip install -e entity_gym
+          pip install -r ppo/requirements.txt
+      - name: Black code formatting
+        run: |
+          black --check --diff .
+      - name: MyPy
+        run: |
+          mypy .
+      #- name: Run tests
+      #  run: |
+      #    pytest
