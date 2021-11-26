@@ -10,11 +10,11 @@ from entity_gym.environment import (
     Environment,
     CategoricalActionSpace,
     ActionSpace,
-    ObsFilter,
+    ObsSpace,
     Observation,
     Action,
 )
-from entity_gym.dataclass_utils import state_space_from_dataclasses, extract_features
+from entity_gym.dataclass_utils import obs_space_from_dataclasses, extract_features
 
 
 @dataclass
@@ -50,8 +50,8 @@ class Minefield(Environment):
     mine: Mine = field(default_factory=Mine)
 
     @classmethod
-    def state_space(cls) -> Dict[str, Entity]:
-        return state_space_from_dataclasses(Vehicle, Mine, Target)
+    def obs_space(cls) -> ObsSpace:
+        return obs_space_from_dataclasses(Vehicle, Mine, Target)
 
     @classmethod
     def action_space(cls) -> Dict[str, ActionSpace]:
@@ -59,7 +59,7 @@ class Minefield(Environment):
             "move": CategoricalActionSpace(["turn left", "move forward", "turn right"],)
         }
 
-    def reset(self, obs_filter: ObsFilter) -> Observation:
+    def reset(self, obs_space: ObsSpace) -> Observation:
         self.vehicle.x_pos, self.vehicle.y_pos = (
             random.uniform(-100, 100),
             random.uniform(-100, 100),
@@ -82,12 +82,12 @@ class Minefield(Environment):
         self.direction = random.uniform(0, 2 * np.pi)
         self.step = 0
         self.mines = mines
-        return self.observe(obs_filter)
+        return self.observe(obs_space)
 
     def _reset(self) -> Observation:
-        return self.reset(Minefield.full_obs_filter())
+        return self.reset(Minefield.obs_space())
 
-    def act(self, action: Mapping[str, Action], obs_filter: ObsFilter) -> Observation:
+    def act(self, action: Mapping[str, Action], obs_filter: ObsSpace) -> Observation:
         for action_name, a in action.items():
             assert isinstance(a, CategoricalAction)
             if action_name == "move":
@@ -112,9 +112,9 @@ class Minefield(Environment):
         return self.observe(obs_filter)
 
     def _act(self, action: Mapping[str, Action]) -> Observation:
-        return self.act(action, Minefield.full_obs_filter(),)
+        return self.act(action, Minefield.obs_space(),)
 
-    def observe(self, obs_filter: ObsFilter, done: bool = False) -> Observation:
+    def observe(self, obs_filter: ObsSpace, done: bool = False) -> Observation:
         if (self.target.x_pos - self.vehicle.x_pos) ** 2 + (
             self.target.y_pos - self.vehicle.y_pos
         ) ** 2 < 5 * 5:

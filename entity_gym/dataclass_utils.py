@@ -4,17 +4,17 @@ import numpy as np
 
 from .environment import (
     Entity,
-    ObsFilter,
+    ObsSpace,
 )
 
 
-def state_space_from_dataclasses(*dss: Type) -> Dict[str, Entity]:
-    state_space = {}
+def obs_space_from_dataclasses(*dss: Type) -> ObsSpace:
+    entities = {}
     for ds in dss:
         if not is_dataclass(ds):
             raise ValueError(f"{ds} is not a dataclass")
         # TODO: check field types are valid
-        state_space[ds.__name__] = Entity(
+        entities[ds.__name__] = Entity(
             features=list(
                 [
                     key
@@ -23,15 +23,15 @@ def state_space_from_dataclasses(*dss: Type) -> Dict[str, Entity]:
                 ]
             ),
         )
-    return state_space
+    return ObsSpace(entities)
 
 
 def extract_features(
-    entities: Dict[str, List[Any]], obs_filter: ObsFilter
+    entities: Dict[str, List[Any]], obs_filter: ObsSpace
 ) -> Dict[str, np.ndarray]:
     selectors = {}
-    for entity_name, features in obs_filter.entity_to_feats.items():
+    for entity_name, entity in obs_filter.entities.items():
         selectors[entity_name] = np.array(
-            [[getattr(e, f) for f in features] for e in entities[entity_name]],
-        ).reshape(-1, len(features))
+            [[getattr(e, f) for f in entity.features] for e in entities[entity_name]],
+        ).reshape(-1, len(entity.features))
     return selectors

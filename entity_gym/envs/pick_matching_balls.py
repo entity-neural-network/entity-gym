@@ -7,6 +7,7 @@ from entity_gym.environment import (
     DenseSelectEntityActionMask,
     Entity,
     Environment,
+    ObsSpace,
     SelectEntityAction,
     SelectEntityActionSpace,
     ActionSpace,
@@ -33,14 +34,16 @@ class PickMatchingBalls(Environment):
     balls: List[Ball] = field(default_factory=list)
 
     @classmethod
-    def state_space(cls) -> Dict[str, Entity]:
-        return {
-            "Ball": Entity(
-                # TODO: better support for categorical features
-                ["color", "selected"],
-            ),
-            "Player": Entity([]),
-        }
+    def obs_space(cls) -> ObsSpace:
+        return ObsSpace(
+            {
+                "Ball": Entity(
+                    # TODO: better support for categorical features
+                    ["color", "selected"],
+                ),
+                "Player": Entity([]),
+            }
+        )
 
     @classmethod
     def action_space(cls) -> Dict[str, ActionSpace]:

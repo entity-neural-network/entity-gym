@@ -6,6 +6,7 @@ from entity_gym.environment import (
     DenseSelectEntityActionMask,
     Entity,
     Environment,
+    ObsSpace,
     SelectEntityAction,
     SelectEntityActionSpace,
     ActionSpace,
@@ -29,11 +30,8 @@ class CherryPick(Environment):
     step: int = 0
 
     @classmethod
-    def state_space(cls) -> Dict[str, Entity]:
-        return {
-            "Cherry": Entity(["quality"]),
-            "Player": Entity([]),
-        }
+    def obs_space(cls) -> ObsSpace:
+        return ObsSpace({"Cherry": Entity(["quality"]), "Player": Entity([]),})
 
     @classmethod
     def action_space(cls) -> Dict[str, ActionSpace]:

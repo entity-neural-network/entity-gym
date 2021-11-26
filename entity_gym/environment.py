@@ -89,12 +89,8 @@ class Entity:
 
 
 @dataclass
-class ObsFilter:
-    """
-    Allows filtering observations to only include a subset of entities and features.
-    """
-
-    entity_to_feats: Dict[str, List[str]]
+class ObsSpace:
+    entities: Dict[str, Entity]
 
 
 @dataclass
@@ -129,7 +125,7 @@ class Environment(ABC):
 
     @classmethod
     @abstractmethod
-    def state_space(cls) -> Dict[str, Entity]:
+    def obs_space(cls) -> ObsSpace:
         """
         Returns a dictionary mapping the name of observable entities to their type.
         """
@@ -160,14 +156,14 @@ class Environment(ABC):
         """
         raise NotImplementedError
 
-    def reset(self, obs_filter: ObsFilter) -> Observation:
+    def reset(self, obs_filter: ObsSpace) -> Observation:
         return self.__class__.filter_obs(self._reset(), obs_filter)
 
-    def act(self, action: Mapping[str, Action], obs_filter: ObsFilter) -> Observation:
+    def act(self, action: Mapping[str, Action], obs_filter: ObsSpace) -> Observation:
         return self.__class__.filter_obs(self._act(action), obs_filter)
 
     @classmethod
-    def filter_obs(cls, obs: Observation, obs_filter: ObsFilter) -> Observation:
+    def filter_obs(cls, obs: Observation, obs_filter: ObsSpace) -> Observation:
         selectors = cls._compile_feature_filter(obs_filter)
         entities = {
             entity_name: entity_features[:, selectors[entity_name]]
@@ -183,23 +179,14 @@ class Environment(ABC):
         )
 
     @classmethod
-    def _compile_feature_filter(cls, obs_filter: ObsFilter) -> Dict[str, np.ndarray]:
-        entity_dict = cls.state_space()
+    def _compile_feature_filter(cls, obs_space: ObsSpace) -> Dict[str, np.ndarray]:
+        obs_space = cls.obs_space()
         feature_selection = {}
-        for entity_name, entity_features in obs_filter.entity_to_feats.items():
-            entity = entity_dict[entity_name]
+        for entity_name, entity in obs_space.entities.items():
             feature_selection[entity_name] = np.array(
-                [entity.features.index(f) for f in entity_features], dtype=np.int32
+                [entity.features.index(f) for f in entity.features], dtype=np.int32
             )
         return feature_selection
-
-    @classmethod
-    def full_obs_filter(cls) -> ObsFilter:
-        return ObsFilter(
-            entity_to_feats={
-                name: entity.features for name, entity in cls.state_space().items()
-            }
-        )
 
 
 class VecEnv(ABC):
@@ -218,12 +205,12 @@ class VecEnv(ABC):
     def _act(self, actions: Sequence[Mapping[str, Action]]) -> List[Observation]:
         raise NotImplementedError
 
-    def reset(self, obs_config: ObsFilter) -> List[Observation]:
+    def reset(self, obs_config: ObsSpace) -> List[Observation]:
         obs = self._reset()
         return [self.env_cls().filter_obs(o, obs_config) for o in obs]
 
     def act(
-        self, actions: Sequence[Mapping[str, Action]], obs_filter: ObsFilter
+        self, actions: Sequence[Mapping[str, Action]], obs_filter: ObsSpace
     ) -> List[Observation]:
         obs = self._act(actions)
         return [self.env_cls().filter_obs(o, obs_filter) for o in obs]

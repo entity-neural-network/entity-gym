@@ -11,6 +11,7 @@ from entity_gym.environment import (
     CategoricalActionSpace,
     ActionSpace,
     EpisodeStats,
+    ObsSpace,
     Observation,
     Action,
 )
@@ -32,10 +33,14 @@ class MoveToOrigin(Environment):
     step: int = 0
 
     @classmethod
-    def state_space(cls) -> Dict[str, Entity]:
-        return {
-            "Spaceship": Entity(["x_pos", "y_pos", "x_velocity", "y_velocity", "step"]),
-        }
+    def obs_space(cls) -> ObsSpace:
+        return ObsSpace(
+            {
+                "Spaceship": Entity(
+                    ["x_pos", "y_pos", "x_velocity", "y_velocity", "step"]
+                ),
+            }
+        )
 
     @classmethod
     def action_space(cls) -> Dict[str, ActionSpace]:
