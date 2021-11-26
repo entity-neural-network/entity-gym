@@ -32,6 +32,6 @@ jobs:
       - name: MyPy
         run: |
           mypy .
-      #- name: Run tests
-      #  run: |
-      #    pytest
+      - name: Run tests
+        run: |
+          pytest
