@@ -58,7 +58,7 @@ class CherryPick(Environment):
             ids=np.arange(len(self.cherries) + 1),
             action_masks={
                 "Pick Cherry": DenseSelectEntityActionMask(
-                    actors=[len(self.cherries)],
+                    actors=np.array([len(self.cherries)]),
                     mask=(
                         np.arange(len(self.cherries) + 1) < len(self.cherries)
                     ).astype(np.float32),

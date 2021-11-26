@@ -235,6 +235,7 @@ class EnvList(VecEnv):
                 # TODO: something is wrong with the interface here
                 new_obs = e._reset()
                 new_obs.done = True
+                new_obs.reward = obs.reward
                 observations.append(new_obs)
             else:
                 observations.append(obs)

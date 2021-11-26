@@ -1,11 +1,6 @@
 import argparse
 from typing import Dict, Type
 
-from entity_gym.envs.move_to_origin import MoveToOrigin
-from entity_gym.envs.cherry_pick import CherryPick
-from entity_gym.envs.pick_matching_balls import PickMatchingBalls
-from entity_gym.envs.minefield import Minefield
-from entity_gym.envs.multi_snake import MultiSnake
 from entity_gym.environment import (
     CategoricalAction,
     DenseSelectEntityActionMask,
@@ -17,6 +12,7 @@ from entity_gym.environment import (
     SelectEntityAction,
     SelectEntityActionSpace,
 )
+from entity_gym.envs import ENV_REGISTRY
 
 
 def print_obs(obs: Observation, total_reward: float, obs_filter: ObsFilter) -> None:
@@ -36,13 +32,7 @@ if __name__ == "__main__":
     parser.add_argument("--env", type=str, default="MoveToOrigin")
     args = parser.parse_args()
 
-    envs: Dict[str, Type[Environment]] = {
-        "MoveToOrigin": MoveToOrigin,
-        "CherryPick": CherryPick,
-        "PickMatchingBalls": PickMatchingBalls,
-        "Minefield": Minefield,
-        "MultiSnake": MultiSnake,
-    }
+    envs = ENV_REGISTRY
     if args.env not in envs:
         raise ValueError(
             f"Unknown environment {args.env}\nValid environments are {list(envs.keys())}"

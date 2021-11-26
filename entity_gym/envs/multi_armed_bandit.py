@@ -1,0 +1,61 @@
+from dataclasses import dataclass
+import numpy as np
+import random
+from typing import Dict, Mapping
+
+from entity_gym.environment import (
+    CategoricalAction,
+    DenseCategoricalActionMask,
+    Entity,
+    Environment,
+    CategoricalActionSpace,
+    ActionSpace,
+    Observation,
+    Action,
+)
+
+
+@dataclass
+class MultiArmedBandit(Environment):
+    """
+    Task with single cateorical action with 5 choices which gives a reward of 1 for choosing action 0 and reward of 0 otherwise.
+    """
+
+    @classmethod
+    def state_space(cls) -> Dict[str, Entity]:
+        return {
+            "MultiArmedBandit": Entity(["step"]),
+        }
+
+    @classmethod
+    def action_space(cls) -> Dict[str, ActionSpace]:
+        return {
+            "pull": CategoricalActionSpace(["A", "B", "C", "D", "E"]),
+        }
+
+    def _reset(self) -> Observation:
+        self.step = 0
+        return self.observe()
+
+    def _act(self, action: Mapping[str, Action]) -> Observation:
+        self.step += 1
+
+        a = action["pull"]
+        assert isinstance(a, CategoricalAction), f"{a} is not a CategoricalAction"
+        if a.actions[0][1] == 0:
+            reward = 1
+        else:
+            reward = 0
+        done = self.step >= 32
+        return self.observe(done, reward)
+
+    def observe(self, done: bool = False, reward: float = 0) -> Observation:
+        return Observation(
+            entities={"MultiArmedBandit": np.array([[self.step,]]),},
+            action_masks={
+                "pull": DenseCategoricalActionMask(actors=np.array([0]), mask=None),
+            },
+            ids=[0],
+            reward=reward,
+            done=done,
+        )
