@@ -62,6 +62,12 @@ EntityID = Any
 
 
 @dataclass
+class EpisodeStats:
+    length: int
+    total_reward: float
+
+
+@dataclass
 class Observation:
     entities: Dict[str, np.ndarray]
     """Maps each entity type to an array with the features for each observed entity of that type."""
@@ -74,7 +80,7 @@ class Observation:
     """Maps each action to an action mask."""
     reward: float
     done: bool
-    info: Any = None
+    end_of_episode_info: Optional[EpisodeStats] = None
 
 
 @dataclass
@@ -167,7 +173,14 @@ class Environment(ABC):
             entity_name: entity_features[:, selectors[entity_name]]
             for entity_name, entity_features in obs.entities.items()
         }
-        return Observation(entities, obs.ids, obs.action_masks, obs.reward, obs.done)
+        return Observation(
+            entities,
+            obs.ids,
+            obs.action_masks,
+            obs.reward,
+            obs.done,
+            obs.end_of_episode_info,
+        )
 
     @classmethod
     def _compile_feature_filter(cls, obs_filter: ObsFilter) -> Dict[str, np.ndarray]:
@@ -236,6 +249,7 @@ class EnvList(VecEnv):
                 new_obs = e._reset()
                 new_obs.done = True
                 new_obs.reward = obs.reward
+                new_obs.end_of_episode_info = obs.end_of_episode_info
                 observations.append(new_obs)
             else:
                 observations.append(obs)

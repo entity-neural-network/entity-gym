@@ -10,6 +10,7 @@ from entity_gym.environment import (
     Environment,
     CategoricalActionSpace,
     ActionSpace,
+    EpisodeStats,
     Observation,
     Action,
 )
@@ -35,6 +36,7 @@ class MultiArmedBandit(Environment):
 
     def _reset(self) -> Observation:
         self.step = 0
+        self._total_reward = 0
         return self.observe()
 
     def _act(self, action: Mapping[str, Action]) -> Observation:
@@ -47,6 +49,7 @@ class MultiArmedBandit(Environment):
         else:
             reward = 0
         done = self.step >= 32
+        self._total_reward += reward
         return self.observe(done, reward)
 
     def observe(self, done: bool = False, reward: float = 0) -> Observation:
@@ -58,4 +61,7 @@ class MultiArmedBandit(Environment):
             ids=[0],
             reward=reward,
             done=done,
+            end_of_episode_info=EpisodeStats(self.step, self._total_reward)
+            if done
+            else None,
         )
