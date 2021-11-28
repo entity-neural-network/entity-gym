@@ -24,13 +24,14 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: ~/.cache/pip
-          key: ${{ hashFiles('requirements-dev.txt') }}-${{ hashFiles('entity_gym/setup.py') }}-${{ hashFiles('enn_ppo/setup.py') }}
+          key: ${{ hashFiles('requirements-dev.txt') }}-${{ hashFiles('entity_gym/setup.py') }}-${{ hashFiles('enn_ppo/setup.py') }}-${{ hashFiles('rogue_net/setup.py') }}
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install torch==1.10
           pip install -r requirements-dev.txt
           pip install -e entity_gym
+          pip install -e rogue_net
           pip install -e enn_ppo
       - name: Black code formatting
         run: |
@@ -38,6 +39,7 @@ jobs:
       - name: MyPy
         run: |
           mypy entity_gym
+          mypy rogue_net
           mypy enn_ppo
       - name: Run tests
         run: |
