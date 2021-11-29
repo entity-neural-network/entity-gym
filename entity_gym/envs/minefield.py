@@ -10,6 +10,7 @@ from entity_gym.environment import (
     Environment,
     CategoricalActionSpace,
     ActionSpace,
+    EpisodeStats,
     ObsSpace,
     Observation,
     Action,
@@ -149,4 +150,5 @@ class Minefield(Environment):
             ids=list(range(len(self.mines) + 2)),
             reward=reward,
             done=done,
+            end_of_episode_info=EpisodeStats(self.step, reward) if done else None,
         )
