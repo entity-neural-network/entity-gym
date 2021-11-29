@@ -53,7 +53,7 @@ class MultiArmedBandit(Environment):
 
     def observe(self, done: bool = False, reward: float = 0) -> Observation:
         return Observation(
-            entities={"MultiArmedBandit": np.array([[self.step,]]),},
+            entities={"MultiArmedBandit": np.array([[self.step,]], dtype=np.float32),},
             action_masks={
                 "pull": DenseCategoricalActionMask(actors=np.array([0]), mask=None),
             },

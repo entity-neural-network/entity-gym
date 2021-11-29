@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Type, Union
 import numpy as np
+import numpy.typing as npt
+from ragged_buffer import RaggedBufferF32, RaggedBufferI64
 
 
 @dataclass
@@ -23,7 +25,7 @@ class ActionMask(ABC):
     Base class for action masks that specify what agents can perform a particular action.
     """
 
-    actors: np.ndarray
+    actors: npt.NDArray[np.int64]
     """
     The indices of the entities that can perform the action.
     """
@@ -81,6 +83,52 @@ class Observation:
     reward: float
     done: bool
     end_of_episode_info: Optional[EpisodeStats] = None
+
+
+@dataclass
+class ObsBatch:
+    entities: Dict[str, RaggedBufferF32]
+    ids: Sequence[Sequence[EntityID]]
+    # TODO: currently assumes categorical actions and no mask
+    action_masks: Mapping[str, RaggedBufferI64]
+    reward: npt.NDArray[np.float32]
+    done: npt.NDArray[np.bool_]
+    end_of_episode_info: Dict[int, EpisodeStats]
+
+
+def batch_obs(obs: List[Observation]) -> ObsBatch:
+    """
+    Converts a list of observations into a batch of observations.
+    """
+    entities = {}
+    ids = []
+    action_masks = {}
+    reward = []
+    done = []
+    end_of_episode_info = {}
+    for o in obs:
+        for k, feats in o.entities.items():
+            if k not in entities:
+                entities[k] = RaggedBufferF32(feats.shape[-1])
+            entities[k].push(feats)
+        ids.append(o.ids)
+        for k, mask in o.action_masks.items():
+            assert isinstance(mask, DenseCategoricalActionMask)
+            if k not in action_masks:
+                action_masks[k] = RaggedBufferI64(1)
+            action_masks[k].push(mask.actors)
+        reward.append(o.reward)
+        done.append(o.done)
+        if o.end_of_episode_info:
+            end_of_episode_info[len(ids) - 1] = o.end_of_episode_info
+    return ObsBatch(
+        entities,
+        ids,
+        action_masks,
+        np.array(reward),
+        np.array(done),
+        end_of_episode_info,
+    )
 
 
 @dataclass
@@ -198,22 +246,14 @@ class VecEnv(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _reset(self) -> List[Observation]:
+    def reset(self, obs_config: ObsSpace) -> ObsBatch:
         raise NotImplementedError
 
     @abstractmethod
-    def _act(self, actions: Sequence[Mapping[str, Action]]) -> List[Observation]:
-        raise NotImplementedError
-
-    def reset(self, obs_config: ObsSpace) -> List[Observation]:
-        obs = self._reset()
-        return [self.env_cls().filter_obs(o, obs_config) for o in obs]
-
     def act(
         self, actions: Sequence[Mapping[str, Action]], obs_filter: ObsSpace
-    ) -> List[Observation]:
-        obs = self._act(actions)
-        return [self.env_cls().filter_obs(o, obs_filter) for o in obs]
+    ) -> ObsBatch:
+        raise NotImplementedError
 
 
 class EnvList(VecEnv):
@@ -224,20 +264,22 @@ class EnvList(VecEnv):
     def env_cls(cls) -> Type[Environment]:
         return cls.cls
 
-    def _reset(self) -> List[Observation]:
-        return [e._reset() for e in self.envs]
+    def reset(self, obs_space: ObsSpace) -> ObsBatch:
+        return batch_obs([e.reset(obs_space) for e in self.envs])
 
-    def _act(self, actions: Sequence[Mapping[str, Action]]) -> List[Observation]:
+    def act(
+        self, actions: Sequence[Mapping[str, Action]], obs_space: ObsSpace
+    ) -> ObsBatch:
         observations = []
         for e, a in zip(self.envs, actions):
-            obs = e._act(a)
+            obs = e.act(a, obs_space)
             if obs.done:
                 # TODO: something is wrong with the interface here
-                new_obs = e._reset()
+                new_obs = e.reset(obs_space)
                 new_obs.done = True
                 new_obs.reward = obs.reward
                 new_obs.end_of_episode_info = obs.end_of_episode_info
                 observations.append(new_obs)
             else:
                 observations.append(obs)
-        return observations
+        return batch_obs(observations)

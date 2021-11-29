@@ -121,7 +121,8 @@ class MoveToOrigin(Environment):
                             self.y_velocity,
                             self.step,
                         ]
-                    ]
+                    ],
+                    dtype=np.float32,
                 ),
             },
             action_masks={
