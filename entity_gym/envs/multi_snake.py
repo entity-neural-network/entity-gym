@@ -163,27 +163,32 @@ class MultiSnake(Environment):
                     [
                         [s.segments[0][0], s.segments[0][1], cycle_color(s.color),]
                         for s in self.snakes
-                    ]
+                    ],
+                    dtype=np.float32,
                 ),
                 "SnakeBody": np.array(
                     [
                         [sx, sy, cycle_color(snake.color)]
                         for snake in self.snakes
                         for sx, sy in snake.segments[1:]
-                    ]
+                    ],
+                    dtype=np.float32,
                 ).reshape(-1, 3),
                 "Food": np.array(
                     [
                         [f.position[0], f.position[1], cycle_color(f.color),]
                         for f in self.food
-                    ]
+                    ],
+                    dtype=np.float32,
                 ),
             },
             ids=list(
                 range(sum([len(s.segments) for s in self.snakes]) + len(self.food))
             ),
             action_masks={
-                "move": DenseCategoricalActionMask(actors=np.arange(self.num_snakes),),
+                "move": DenseCategoricalActionMask(
+                    actors=np.arange(self.num_snakes, dtype=np.int64),
+                ),
             },
             reward=self.scores[player] - self.last_scores[player],
             done=done,
