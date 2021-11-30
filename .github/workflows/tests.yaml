@@ -5,15 +5,13 @@ on:
     branches: [ '*' ]
   pull_request:
     branches: [ main ]
-
-
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: [3.9]
+        poetry-version: [1.1.11]
 
     steps:
       - uses: actions/checkout@v2
@@ -21,26 +19,27 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: actions/cache@v2
+      - name: Setup poetry
+        uses: abatilo/actions-poetry@v2.0.0
         with:
-          path: ~/.cache/pip
-          key: ${{ hashFiles('requirements-dev.txt') }}-${{ hashFiles('entity_gym/setup.py') }}-${{ hashFiles('enn_ppo/setup.py') }}-${{ hashFiles('rogue_net/setup.py') }}
+          poetry-version: ${{ matrix.poetry-version }}
+      # - uses: actions/cache@v2
+      #   with:
+      #     path: ~/.cache/pip
+      #     key: ${{ hashFiles('requirements-dev.txt') }}-${{ hashFiles('entity_gym/setup.py') }}-${{ hashFiles('enn_ppo/setup.py') }}-${{ hashFiles('rogue_net/setup.py') }}
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install torch==1.10
-          pip install -r requirements-dev.txt
-          pip install -e entity_gym
-          pip install -e rogue_net
-          pip install -e enn_ppo
+        continue-on-error: true
+        run: poetry install
+      - name: Install dependencies (install torch-scatter)
+        run: poetry install
       - name: Black code formatting
         run: |
-          black --check --diff .
+          poetry run black --check --diff .
       - name: MyPy
         run: |
-          mypy entity_gym
-          mypy rogue_net
-          mypy enn_ppo
+          poetry run mypy entity_gym
+          poetry run mypy rogue_net
+          poetry run mypy enn_ppo
       - name: Run tests
         run: |
-          pytest
+          poetry run pytest

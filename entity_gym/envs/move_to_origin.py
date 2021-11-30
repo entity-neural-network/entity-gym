@@ -46,7 +46,13 @@ class MoveToOrigin(Environment):
     def action_space(cls) -> Dict[str, ActionSpace]:
         return {
             "horizontal_thruster": CategoricalActionSpace(
-                ["100% right", "10% right", "hold", "10% left", "100% left",],
+                [
+                    "100% right",
+                    "10% right",
+                    "hold",
+                    "10% left",
+                    "100% left",
+                ],
             ),
             "vertical_thruster": CategoricalActionSpace(
                 ["100% up", "10% up", "hold", "10% down", "100% down"],

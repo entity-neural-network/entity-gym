@@ -31,7 +31,12 @@ class CherryPick(Environment):
 
     @classmethod
     def obs_space(cls) -> ObsSpace:
-        return ObsSpace({"Cherry": Entity(["quality"]), "Player": Entity([]),})
+        return ObsSpace(
+            {
+                "Cherry": Entity(["quality"]),
+                "Player": Entity([]),
+            }
+        )
 
     @classmethod
     def action_space(cls) -> Dict[str, ActionSpace]:

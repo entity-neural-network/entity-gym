@@ -25,7 +25,11 @@ class MultiArmedBandit(Environment):
 
     @classmethod
     def obs_space(cls) -> ObsSpace:
-        return ObsSpace({"MultiArmedBandit": Entity(["step"]),})
+        return ObsSpace(
+            {
+                "MultiArmedBandit": Entity(["step"]),
+            }
+        )
 
     @classmethod
     def action_space(cls) -> Dict[str, ActionSpace]:
@@ -53,7 +57,16 @@ class MultiArmedBandit(Environment):
 
     def observe(self, done: bool = False, reward: float = 0) -> Observation:
         return Observation(
-            entities={"MultiArmedBandit": np.array([[self.step,]], dtype=np.float32),},
+            entities={
+                "MultiArmedBandit": np.array(
+                    [
+                        [
+                            self.step,
+                        ]
+                    ],
+                    dtype=np.float32,
+                ),
+            },
             action_masks={
                 "pull": DenseCategoricalActionMask(actors=np.array([0]), mask=None),
             },
