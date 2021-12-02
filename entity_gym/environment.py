@@ -60,6 +60,7 @@ class DenseSelectEntityActionMask(ActionMask):
     """
 
 
+# TODO: This actually cannot be 'any' type it sepcifically needs to be an integer.
 EntityID = Any
 
 

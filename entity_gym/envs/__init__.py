@@ -8,6 +8,8 @@ from entity_gym.envs.minefield import Minefield
 from entity_gym.envs.multi_snake import MultiSnake
 from entity_gym.envs.multi_armed_bandit import MultiArmedBandit
 
+from enn_zoo.griddly import GRIDDLY_ENVS
+
 ENV_REGISTRY: Dict[str, Type[Environment]] = {
     "MoveToOrigin": MoveToOrigin,
     "CherryPick": CherryPick,
@@ -15,4 +17,5 @@ ENV_REGISTRY: Dict[str, Type[Environment]] = {
     "Minefield": Minefield,
     "MultiSnake": MultiSnake,
     "MultiArmedBandit": MultiArmedBandit,
+    **GRIDDLY_ENVS,
 }

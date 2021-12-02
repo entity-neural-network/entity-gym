@@ -59,9 +59,11 @@ jobs:
           poetry run black --check --diff .
       - name: MyPy
         run: |
+          poetry run mypy enn_zoo
           poetry run mypy entity_gym
           poetry run mypy rogue_net
           poetry run mypy enn_ppo
       - name: Run tests
         run: |
-          poetry run pytest
+          poetry install -E griddly
+          poetry run pytest -v
