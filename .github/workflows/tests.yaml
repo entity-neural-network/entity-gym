@@ -65,5 +65,4 @@ jobs:
           poetry run mypy enn_ppo
       - name: Run tests
         run: |
-          poetry install -E griddly
           poetry run pytest -v
