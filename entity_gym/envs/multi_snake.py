@@ -9,6 +9,7 @@ from entity_gym.environment import (
     DenseCategoricalActionMask,
     Entity,
     Environment,
+    EpisodeStats,
     ObsSpace,
     Type,
     CategoricalActionSpace,
@@ -57,6 +58,7 @@ class MultiSnake(Environment):
         self.game_over = False
         self.last_scores = [0] * self.num_players
         self.scores = [0] * self.num_players
+        self.step = 0
 
     @classmethod
     def obs_space(cls) -> ObsSpace:
@@ -101,6 +103,10 @@ class MultiSnake(Environment):
     def _reset(self) -> Observation:
         self.snakes = []
         self.food = []
+        self.game_over = False
+        self.last_scores = [0] * self.num_players
+        self.scores = [0] * self.num_players
+        self.step = 0
         for i in range(self.num_snakes):
             self._spawn_snake(i)
         for i in range(self.num_snakes):
@@ -109,6 +115,7 @@ class MultiSnake(Environment):
 
     def _act(self, action: Mapping[str, Action]) -> Observation:
         game_over = False
+        self.step += 1
         reward = 0.0
         move_action = action["move"]
         self.last_scores = deepcopy(self.scores)
@@ -135,7 +142,7 @@ class MultiSnake(Environment):
                         game_over = True
                     elif len(snake.segments) < 11:
                         ate_Food = True
-                        self.scores[id // self.num_players] += 0.1 / self.num_snakes
+                        self.scores[id // self.num_snakes] += 0.1 / self.num_snakes
                     self.food.pop(i)
                     self._spawn_food(snake.color)
                     break
@@ -202,6 +209,9 @@ class MultiSnake(Environment):
             },
             reward=self.scores[player] - self.last_scores[player],
             done=done,
+            end_of_episode_info=EpisodeStats(
+                length=self.step, total_reward=self.scores[player]
+            ),
         )
 
 
