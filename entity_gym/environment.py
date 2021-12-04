@@ -117,7 +117,7 @@ def batch_obs(obs: List[Observation]) -> ObsBatch:
             assert isinstance(mask, DenseCategoricalActionMask)
             if k not in action_masks:
                 action_masks[k] = RaggedBufferI64(1)
-            action_masks[k].push(mask.actors)
+            action_masks[k].push(mask.actors.reshape(-1, 1))
         reward.append(o.reward)
         done.append(o.done)
         if o.end_of_episode_info:
@@ -215,7 +215,9 @@ class Environment(ABC):
     def filter_obs(cls, obs: Observation, obs_filter: ObsSpace) -> Observation:
         selectors = cls._compile_feature_filter(obs_filter)
         entities = {
-            entity_name: entity_features[:, selectors[entity_name]]
+            entity_name: entity_features[:, selectors[entity_name]].reshape(
+                entity_features.shape[0], len(selectors[entity_name])
+            )
             for entity_name, entity_features in obs.entities.items()
         }
         return Observation(

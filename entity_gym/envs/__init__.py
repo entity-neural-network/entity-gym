@@ -7,6 +7,7 @@ from entity_gym.envs.pick_matching_balls import PickMatchingBalls
 from entity_gym.envs.minefield import Minefield
 from entity_gym.envs.multi_snake import MultiSnake
 from entity_gym.envs.multi_armed_bandit import MultiArmedBandit
+from entity_gym.envs.not_hotdog import NotHotdog
 
 ENV_REGISTRY: Dict[str, Type[Environment]] = {
     "MoveToOrigin": MoveToOrigin,
@@ -15,4 +16,5 @@ ENV_REGISTRY: Dict[str, Type[Environment]] = {
     "Minefield": Minefield,
     "MultiSnake": MultiSnake,
     "MultiArmedBandit": MultiArmedBandit,
+    "NotHotdog": NotHotdog,
 }
