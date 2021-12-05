@@ -43,7 +43,13 @@ class MultiSnake(Environment):
     The game ends when a snake collides with another snake, runs into a wall, eats Food of another color, or all snakes reach a length of 11.
     """
 
-    def __init__(self, board_size: int = 10, num_snakes: int = 2, num_players: int = 1):
+    def __init__(
+        self,
+        board_size: int = 10,
+        num_snakes: int = 2,
+        num_players: int = 1,
+        max_snake_length: int = 11,
+    ):
         """
         :param num_players: number of players
         :param board_size: size of the board
@@ -53,6 +59,7 @@ class MultiSnake(Environment):
         self.board_size = board_size
         self.num_snakes = num_snakes
         self.num_players = num_players
+        self.max_snake_length = max_snake_length
         self.snakes: List[Snake] = []
         self.food: List[Food] = []
         self.game_over = False
@@ -140,9 +147,11 @@ class MultiSnake(Environment):
                 if self.food[i].position == (x, y):
                     if self.food[i].color != snake.color:
                         game_over = True
-                    elif len(snake.segments) < 11:
+                    elif len(snake.segments) < self.max_snake_length:
                         ate_Food = True
-                        self.scores[id // self.num_snakes] += 0.1 / self.num_snakes
+                        self.scores[id // self.num_snakes] += (
+                            1.0 / (self.max_snake_length - 1) / self.num_snakes
+                        )
                     self.food.pop(i)
                     self._spawn_food(snake.color)
                     break
@@ -152,7 +161,7 @@ class MultiSnake(Environment):
         for player in range(self.num_players):
             snakes_per_player = self.num_snakes // self.num_players
             if all(
-                len(s.segments) >= 11
+                len(s.segments) >= self.max_snake_length
                 for s in self.snakes[
                     player * snakes_per_player : (player + 1) * snakes_per_player
                 ]
