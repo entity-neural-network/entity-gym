@@ -8,6 +8,8 @@ from entity_gym.envs.minefield import Minefield
 from entity_gym.envs.multi_snake import MultiSnake
 from entity_gym.envs.multi_armed_bandit import MultiArmedBandit
 from entity_gym.envs.not_hotdog import NotHotdog
+from entity_gym.envs.xor import Xor
+from entity_gym.envs.count import Count
 
 ENV_REGISTRY: Dict[str, Type[Environment]] = {
     "MoveToOrigin": MoveToOrigin,
@@ -17,4 +19,6 @@ ENV_REGISTRY: Dict[str, Type[Environment]] = {
     "MultiSnake": MultiSnake,
     "MultiArmedBandit": MultiArmedBandit,
     "NotHotdog": NotHotdog,
+    "Xor": Xor,
+    "Count": Count,
 }

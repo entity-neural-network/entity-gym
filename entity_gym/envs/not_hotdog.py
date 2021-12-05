@@ -20,10 +20,9 @@ from entity_gym.environment import (
 @dataclass
 class NotHotdog(Environment):
     """
-    Classify the object as hotdog or not.
+    On each timestep, there is either a generic "Object" entity with a `is_hotdog` property, or a "Hotdog" object.
+    The "Player" entity is always present, and has an action to classify the other entity as hotdog or not hotdog.
     """
-
-    multi_object: bool = True
 
     @classmethod
     def obs_space(cls) -> ObsSpace:
@@ -44,6 +43,7 @@ class NotHotdog(Environment):
     def _reset(self) -> Observation:
         self.step = 0
         self.is_hotdog = random.randint(0, 1)
+        self.hotdog_object = random.randint(0, 1) == 1
         return self.observe()
 
     def _act(self, action: Mapping[str, Action]) -> Observation:
@@ -77,10 +77,11 @@ class NotHotdog(Environment):
                     ],
                     dtype=np.float32,
                 )
-                if (self.multi_object and self.is_hotdog == 0) or not self.multi_object
+                if (self.hotdog_object and self.is_hotdog == 0)
+                or not self.hotdog_object
                 else np.zeros((0, 1), dtype=np.float32).reshape(0, 1),
                 "Hotdog": np.zeros((1, 0), dtype=np.float32)
-                if self.multi_object and self.is_hotdog == 1
+                if self.hotdog_object and self.is_hotdog == 1
                 else np.zeros((0, 0), dtype=np.float32),
             },
             action_masks={

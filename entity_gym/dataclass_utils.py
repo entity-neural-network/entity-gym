@@ -34,5 +34,5 @@ def extract_features(
         selectors[entity_name] = np.array(
             [[getattr(e, f) for f in entity.features] for e in entities[entity_name]],
             dtype=np.float32,
-        ).reshape(-1, len(entity.features))
+        ).reshape(len(entities[entity_name]), len(entity.features))
     return selectors
