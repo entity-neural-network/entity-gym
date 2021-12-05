@@ -49,6 +49,10 @@ class Minefield(Environment):
     vehicle: Vehicle = field(default_factory=Vehicle)
     target: Target = field(default_factory=Target)
     mine: Mine = field(default_factory=Mine)
+    max_mines: int = 10
+    max_steps: int = 200
+    translate: bool = False
+    width: float = 200.0
 
     @classmethod
     def obs_space(cls) -> ObsSpace:
@@ -63,17 +67,17 @@ class Minefield(Environment):
         }
 
     def reset(self, obs_space: ObsSpace) -> Observation:
-        self.vehicle.x_pos, self.vehicle.y_pos = (
-            random.uniform(-100, 100),
-            random.uniform(-100, 100),
-        )
-        self.target.x_pos, self.target.y_pos = (
-            random.uniform(-100, 100),
-            random.uniform(-100, 100),
-        )
+        def randpos() -> Tuple[float, float]:
+            return (
+                random.uniform(-self.width / 2, self.width / 2),
+                random.uniform(-self.width / 2, self.width / 2),
+            )
+
+        self.vehicle.x_pos, self.vehicle.y_pos = randpos()
+        self.target.x_pos, self.target.y_pos = randpos()
         mines: List[Mine] = []
-        for _ in range(10):
-            x, y = (random.uniform(-100, 100), random.uniform(-100, 100))
+        for _ in range(self.max_mines):
+            x, y = randpos()
             # Check that the mine is not too close to the vehicle, target, or any other mine
             pos = [(m.x_pos, m.y_pos) for m in mines] + [
                 (self.vehicle.x_pos, self.vehicle.y_pos),
@@ -82,7 +86,7 @@ class Minefield(Environment):
             if any(map(lambda p: (x - p[0]) ** 2 + (y - p[1]) ** 2 < 15 * 15, pos)):
                 continue
             mines.append(Mine(x, y))
-        self.direction = random.uniform(0, 2 * np.pi)
+        self.vehicle.direction = random.uniform(0, 2 * np.pi)
         self.step = 0
         self.mines = mines
         return self.observe(obs_space)
@@ -96,21 +100,22 @@ class Minefield(Environment):
             if action_name == "move":
                 move = a.actions[0][1]
                 if move == 0:
-                    self.direction -= np.pi / 8
+                    self.vehicle.direction -= np.pi / 8
                 elif move == 1:
-                    self.vehicle.x_pos += 3 * np.cos(self.direction)
-                    self.vehicle.y_pos += 3 * np.sin(self.direction)
+                    self.vehicle.x_pos += 3 * np.cos(self.vehicle.direction)
+                    self.vehicle.y_pos += 3 * np.sin(self.vehicle.direction)
                 elif move == 2:
-                    self.direction += np.pi / 8
+                    self.vehicle.direction += np.pi / 8
                 else:
                     raise ValueError(
                         f"Invalid action {move} for action space {action_name}"
                     )
-                self.direction %= 2 * np.pi
+                self.vehicle.direction %= 2 * np.pi
             else:
                 raise ValueError(f"Unknown action type {action_name}")
 
         self.step += 1
+        self.vehicle.step = self.step
 
         return self.observe(obs_filter)
 
@@ -126,13 +131,16 @@ class Minefield(Environment):
         ) ** 2 < 5 * 5:
             done = True
             reward = 1
-        elif any(
-            map(
-                lambda m: (self.vehicle.x_pos - m.x_pos) ** 2
-                + (self.vehicle.y_pos - m.y_pos) ** 2
-                < 5 * 5,
-                self.mines,
+        elif (
+            any(
+                map(
+                    lambda m: (self.vehicle.x_pos - m.x_pos) ** 2
+                    + (self.vehicle.y_pos - m.y_pos) ** 2
+                    < 5 * 5,
+                    self.mines,
+                )
             )
+            or self.step >= self.max_steps
         ):
             done = True
             reward = 0
@@ -140,12 +148,17 @@ class Minefield(Environment):
             done = False
             reward = 0
 
+        if self.translate:
+            ox = self.vehicle.x_pos
+            oy = self.vehicle.y_pos
+        else:
+            ox = oy = 0
         return Observation(
             entities=extract_features(
                 {
-                    "Mine": self.mines,
+                    "Mine": [Mine(m.x_pos - ox, m.y_pos - oy) for m in self.mines],
                     "Vehicle": [self.vehicle],
-                    "Target": [self.target],
+                    "Target": [Target(self.target.x_pos - ox, self.target.y_pos - oy)],
                 },
                 obs_filter,
             ),
