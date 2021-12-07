@@ -1,6 +1,17 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Type, Union
+from typing import (
+    Any,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    overload,
+)
 import numpy as np
 import numpy.typing as npt
 from ragged_buffer import RaggedBufferF32, RaggedBufferI64
@@ -53,7 +64,8 @@ class DenseSelectEntityActionMask(ActionMask):
     each actor.
     """
 
-    mask: Optional[np.ndarray]
+    actees: npt.NDArray[np.int64]
+    mask: Optional[np.ndarray] = None
     """
     An boolean array of shape (len(actors), len(entities)). If mask[i, j] is True, then
     agent i can select entity j.
@@ -87,11 +99,87 @@ class Observation:
 
 
 @dataclass
+class CategoricalActionMaskBatch:
+    actors: RaggedBufferI64
+
+    def push(self, mask: Any) -> None:
+        assert isinstance(mask, DenseCategoricalActionMask)
+        self.actors.push(mask.actors.reshape(-1, 1))
+
+    @overload
+    def __getitem__(self, i: int) -> RaggedBufferI64:
+        ...
+
+    @overload
+    def __getitem__(self, i: npt.NDArray[np.int64]) -> "CategoricalActionMaskBatch":
+        ...
+
+    def __getitem__(
+        self, i: Union[int, npt.NDArray[np.int64]]
+    ) -> Union["CategoricalActionMaskBatch", RaggedBufferI64]:
+        if isinstance(i, int):
+            return self.actors[i]
+        else:
+            return CategoricalActionMaskBatch(self.actors[i])
+
+    def extend(self, other: Any) -> None:
+        assert isinstance(
+            other, CategoricalActionMaskBatch
+        ), f"Expected CategoricalActionMaskBatch, got {type(other)}"
+        self.actors.extend(other.actors)
+
+    def clear(self) -> None:
+        self.actors.clear()
+
+
+@dataclass
+class SelectEntityActionMaskBatch:
+    actors: RaggedBufferI64
+    actees: RaggedBufferI64
+
+    def push(self, mask: Any) -> None:
+        assert isinstance(
+            mask, DenseSelectEntityActionMask
+        ), f"Expected DenseSelectEntityActionMask, got {type(mask)}"
+        self.actors.push(mask.actors.reshape(-1, 1))
+        self.actees.push(mask.actees.reshape(-1, 1))
+
+    @overload
+    def __getitem__(self, i: int) -> RaggedBufferI64:
+        ...
+
+    @overload
+    def __getitem__(self, i: npt.NDArray[np.int64]) -> "SelectEntityActionMaskBatch":
+        ...
+
+    def __getitem__(
+        self, i: Union[int, npt.NDArray[np.int64]]
+    ) -> Union["SelectEntityActionMaskBatch", RaggedBufferI64]:
+        if isinstance(i, int):
+            return self.actors[i]
+        else:
+            return SelectEntityActionMaskBatch(self.actors[i], self.actees[i])
+
+    def extend(self, other: Any) -> None:
+        assert isinstance(
+            other, SelectEntityActionMaskBatch
+        ), f"Expected SelectEntityActionMaskBatch, got {type(other)}"
+        self.actors.extend(other.actors)
+        self.actees.extend(other.actees)
+
+    def clear(self) -> None:
+        self.actors.clear()
+        self.actees.clear()
+
+
+ActionMaskBatch = Union[CategoricalActionMaskBatch, SelectEntityActionMaskBatch]
+
+
+@dataclass
 class ObsBatch:
     entities: Dict[str, RaggedBufferF32]
     ids: Sequence[Sequence[EntityID]]
-    # TODO: currently assumes categorical actions and no mask
-    action_masks: Mapping[str, RaggedBufferI64]
+    action_masks: Mapping[str, ActionMaskBatch]
     reward: npt.NDArray[np.float32]
     done: npt.NDArray[np.bool_]
     end_of_episode_info: Dict[int, EpisodeStats]
@@ -103,7 +191,9 @@ def batch_obs(obs: List[Observation]) -> ObsBatch:
     """
     entities = {}
     ids = []
-    action_masks = {}
+    action_masks: Dict[
+        str, Union[CategoricalActionMaskBatch, SelectEntityActionMaskBatch]
+    ] = {}
     reward = []
     done = []
     end_of_episode_info = {}
@@ -114,10 +204,16 @@ def batch_obs(obs: List[Observation]) -> ObsBatch:
             entities[k].push(feats)
         ids.append(o.ids)
         for k, mask in o.action_masks.items():
-            assert isinstance(mask, DenseCategoricalActionMask)
-            if k not in action_masks:
-                action_masks[k] = RaggedBufferI64(1)
-            action_masks[k].push(mask.actors.reshape(-1, 1))
+            if isinstance(mask, DenseCategoricalActionMask):
+                if k not in action_masks:
+                    action_masks[k] = CategoricalActionMaskBatch(RaggedBufferI64(1))
+            elif isinstance(mask, DenseSelectEntityActionMask):
+                if k not in action_masks:
+                    action_masks[k] = SelectEntityActionMaskBatch(
+                        RaggedBufferI64(1), RaggedBufferI64(1)
+                    )
+            action_masks[k].push(mask)
+
         reward.append(o.reward)
         done.append(o.done)
         if o.end_of_episode_info:
