@@ -5,6 +5,7 @@ from typing import Dict, List, Mapping
 from entity_gym.environment import (
     DenseSelectEntityActionMask,
     Entity,
+    EntityID,
     Environment,
     EpisodeStats,
     ObsSpace,
@@ -54,6 +55,9 @@ class CherryPick(Environment):
         self.last_reward = 0.0
         self.step = 0
         self.total_reward = 0.0
+        self.ids: List[EntityID] = [
+            f"Cherry {a}" for a in range(1, len(self.cherries) + 1)
+        ] + ["Player"]
         return self.observe()
 
     def observe(self) -> Observation:
@@ -63,7 +67,7 @@ class CherryPick(Environment):
                 "Cherry": np.array(self.cherries, dtype=np.float32).reshape(-1, 1),
                 "Player": np.zeros([1, 0], dtype=np.float32),
             },
-            ids=np.arange(len(self.cherries) + 1),
+            ids=self.ids,
             action_masks={
                 "Pick Cherry": DenseSelectEntityActionMask(
                     actors=np.array([len(self.cherries)]),
@@ -80,11 +84,16 @@ class CherryPick(Environment):
             else None,
         )
 
+    def _entityID_to_idx(self, id: EntityID) -> int:
+        return self.ids.index(id)
+
     def _act(self, action: Mapping[str, Action]) -> Observation:
         assert len(action) == 1
         a = action["Pick Cherry"]
         assert isinstance(a, SelectEntityAction)
-        self.last_reward = self.cherries.pop(a.actions[0][1])
+        chosen_cherry_idx = self._entityID_to_idx(a.actions[0][1])
+        self.last_reward = self.cherries.pop(chosen_cherry_idx)
+        self.ids.pop(chosen_cherry_idx)
         self.total_reward += self.last_reward
         self.step += 1
         return self.observe()

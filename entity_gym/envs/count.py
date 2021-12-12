@@ -84,7 +84,7 @@ class Count(Environment):
             action_masks={
                 "count": DenseCategoricalActionMask(actors=np.array([0]), mask=None),
             },
-            ids=list(range(1 + self.count)),
+            ids=["Player"] + [f"Bean{i}" for i in range(1, self.count + 1)],
             reward=reward,
             done=done,
             end_of_episode_info=EpisodeStats(1, reward) if done else None,
