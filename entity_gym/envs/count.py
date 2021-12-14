@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
 import numpy as np
+import numpy.typing as npt
 import random
-from typing import Dict, List, Mapping, Tuple
+from typing import Dict, List, Mapping, Tuple, Optional
 
 from entity_gym.environment import (
     CategoricalAction,
@@ -32,7 +33,17 @@ class Count(Environment):
     """
     There are between 0 and 10 "Bean" entities.
     The "Player" entity gets 1 reward for counting the correct number of beans and 0 otherwise.
+
+    This environment also randomly masks off some of the incorrect answers.
+
+    Masking by default allows all actions, which is equivalent to disabling masking.
     """
+
+    def __init__(self, masked_choices: int = 10):
+        assert (
+            masked_choices >= 1 and masked_choices <= 10
+        ), "masked_choices must be between 1 and 10"
+        self.masked_choices = masked_choices
 
     @classmethod
     def obs_space(cls) -> ObsSpace:
@@ -47,8 +58,16 @@ class Count(Environment):
         }
 
     def reset(self, obs_space: ObsSpace) -> Observation:
-        self.count = random.randint(0, 1)
-        return self.observe(obs_space)
+        self.count = random.randint(0, self.masked_choices - 1)
+        possible_counts = {
+            self.count,
+            *random.sample(
+                range(0, self.masked_choices), random.randint(0, self.masked_choices)
+            ),
+        }
+        mask = np.zeros((10), dtype=np.int64)
+        mask[list(possible_counts)] = 1
+        return self.observe(obs_space, mask)
 
     def _reset(self) -> Observation:
         return self.reset(Count.obs_space())
@@ -62,7 +81,7 @@ class Count(Environment):
         choice = a.actions[0][1]
         if choice == self.count:
             reward = 1.0
-        return self.observe(obs_filter, done=True, reward=reward)
+        return self.observe(obs_filter, None, done=True, reward=reward)
 
     def _act(self, action: Mapping[str, Action]) -> Observation:
         return self.act(
@@ -71,7 +90,11 @@ class Count(Environment):
         )
 
     def observe(
-        self, obs_filter: ObsSpace, done: bool = False, reward: float = 0.0
+        self,
+        obs_filter: ObsSpace,
+        mask: Optional[npt.NDArray[np.int64]],
+        done: bool = False,
+        reward: float = 0.0,
     ) -> Observation:
         return Observation(
             entities=extract_features(
@@ -82,7 +105,7 @@ class Count(Environment):
                 obs_filter,
             ),
             action_masks={
-                "count": DenseCategoricalActionMask(actors=np.array([0]), mask=None),
+                "count": DenseCategoricalActionMask(actors=np.array([0]), mask=mask),
             },
             ids=["Player"] + [f"Bean{i}" for i in range(1, self.count + 1)],
             reward=reward,
