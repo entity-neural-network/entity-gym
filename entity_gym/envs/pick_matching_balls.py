@@ -32,8 +32,12 @@ class PickMatchingBalls(Environment):
     The player receives a reward equal to the number of balls picked up divided by the maximum number of balls of the same color.
     """
 
-    num_balls: int = 32
+    max_balls: int = 32
     balls: List[Ball] = field(default_factory=list)
+    one_hot: bool = False  # use one-hot encoding for the ball color feature
+    randomize: bool = (
+        False  # randomize the number of balls to be between 3 and max_balls
+    )
 
     @classmethod
     def obs_space(cls) -> ObsSpace:
@@ -41,7 +45,15 @@ class PickMatchingBalls(Environment):
             {
                 "Ball": Entity(
                     # TODO: better support for categorical features
-                    ["color", "selected"],
+                    [
+                        "color0",
+                        "color1",
+                        "color2",
+                        "color3",
+                        "color4",
+                        "color5",
+                        "selected",
+                    ],
                 ),
                 "Player": Entity([]),
             }
@@ -52,7 +64,10 @@ class PickMatchingBalls(Environment):
         return {"Pick Ball": SelectEntityActionSpace()}
 
     def _reset(self) -> Observation:
-        self.balls = [Ball(color=random.randint(0, 5)) for _ in range(self.num_balls)]
+        num_balls = (
+            self.max_balls if not self.randomize else random.randint(3, self.max_balls)
+        )
+        self.balls = [Ball(color=random.randint(0, 5)) for _ in range(num_balls)]
         self.step = 0
         return self.observe()
 
@@ -61,7 +76,7 @@ class PickMatchingBalls(Environment):
             b.selected for b in self.balls
         )
         if done:
-            if self.step == self.num_balls:
+            if all(b.selected for b in self.balls):
                 reward = 1.0
             else:
                 reward = (sum(b.selected for b in self.balls) - 1) / max(
@@ -76,7 +91,15 @@ class PickMatchingBalls(Environment):
         return Observation(
             entities={
                 "Ball": np.array(
-                    [[float(b.color), float(b.selected)] for b in self.balls],
+                    [
+                        [float(b.color == c) for c in range(6)] + [float(b.selected)]
+                        for b in self.balls
+                    ]
+                    if self.one_hot
+                    else [
+                        [float(b.color) for _ in range(6)] + [float(b.selected)]
+                        for b in self.balls
+                    ],
                     dtype=np.float32,
                 ),
                 "Player": np.zeros([1, 0], dtype=np.float32),
