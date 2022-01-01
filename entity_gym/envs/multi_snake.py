@@ -180,8 +180,8 @@ class MultiSnake(Environment):
                 "SnakeHead": np.array(
                     [
                         [
-                            s.segments[0][0],
-                            s.segments[0][1],
+                            s.segments[-1][0],
+                            s.segments[-1][1],
                             cycle_color(s.color),
                         ]
                         for s in self.snakes
@@ -192,7 +192,7 @@ class MultiSnake(Environment):
                     [
                         [sx, sy, cycle_color(snake.color)]
                         for snake in self.snakes
-                        for sx, sy in snake.segments[1:]
+                        for sx, sy in snake.segments[:-1]
                     ],
                     dtype=np.float32,
                 ).reshape(-1, 3),
