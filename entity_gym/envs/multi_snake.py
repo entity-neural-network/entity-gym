@@ -142,21 +142,21 @@ class MultiSnake(Environment):
                 game_over = True
             if any((x, y) == (sx, sy) for s in self.snakes for sx, sy in s.segments):
                 game_over = True
-            ate_Food = False
+            ate_food = False
+            snake.segments.append((x, y))
             for i in range(len(self.food)):
                 if self.food[i].position == (x, y):
                     if self.food[i].color != snake.color:
                         game_over = True
                     elif len(snake.segments) < self.max_snake_length:
-                        ate_Food = True
+                        ate_food = True
                         self.scores[id // self.num_snakes] += (
                             1.0 / (self.max_snake_length - 1) / self.num_snakes
                         )
                     self.food.pop(i)
                     self._spawn_food(snake.color)
                     break
-            snake.segments.append((x, y))
-            if not ate_Food:
+            if not ate_food:
                 snake.segments = snake.segments[1:]
         for player in range(self.num_players):
             snakes_per_player = self.num_snakes // self.num_players
