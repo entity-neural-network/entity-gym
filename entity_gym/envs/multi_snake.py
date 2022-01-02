@@ -148,7 +148,7 @@ class MultiSnake(Environment):
                 if self.food[i].position == (x, y):
                     if self.food[i].color != snake.color:
                         game_over = True
-                    elif len(snake.segments) < self.max_snake_length:
+                    elif len(snake.segments) <= self.max_snake_length:
                         ate_food = True
                         self.scores[id // self.num_snakes] += (
                             1.0 / (self.max_snake_length - 1) / self.num_snakes
