@@ -49,6 +49,7 @@ class MultiSnake(Environment):
         num_snakes: int = 2,
         num_players: int = 1,
         max_snake_length: int = 11,
+        max_steps: int = 180,
     ):
         """
         :param num_players: number of players
@@ -66,12 +67,13 @@ class MultiSnake(Environment):
         self.last_scores = [0] * self.num_players
         self.scores = [0] * self.num_players
         self.step = 0
+        self.max_steps = max_steps
 
     @classmethod
     def obs_space(cls) -> ObsSpace:
         return ObsSpace(
             {
-                "SnakeHead": Entity(["x", "y", "color"]),
+                "SnakeHead": Entity(["x", "y", "color", "step"]),
                 "SnakeBody": Entity(["x", "y", "color"]),
                 "Food": Entity(["x", "y", "color"]),
             }
@@ -167,6 +169,8 @@ class MultiSnake(Environment):
                 ]
             ):
                 game_over = True
+        if self.step >= self.max_steps:
+            game_over = True
         return self._observe(done=game_over)
 
     def _observe(self, done: bool = False, player: int = 0) -> Observation:
@@ -183,6 +187,7 @@ class MultiSnake(Environment):
                             s.segments[-1][0],
                             s.segments[-1][1],
                             cycle_color(s.color),
+                            self.step,
                         ]
                         for s in self.snakes
                     ],
