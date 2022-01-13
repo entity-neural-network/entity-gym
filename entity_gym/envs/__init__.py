@@ -1,6 +1,6 @@
 from typing import Dict, Type
 from entity_gym.environment import Environment
-
+from entity_gym.envs.floor_is_lava import FloorIsLava
 from entity_gym.envs.move_to_origin import MoveToOrigin
 from entity_gym.envs.cherry_pick import CherryPick
 from entity_gym.envs.pick_matching_balls import PickMatchingBalls
@@ -21,4 +21,5 @@ ENV_REGISTRY: Dict[str, Type[Environment]] = {
     "NotHotdog": NotHotdog,
     "Xor": Xor,
     "Count": Count,
+    "FloorIsLava": FloorIsLava,
 }
