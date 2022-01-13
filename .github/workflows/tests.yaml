@@ -43,9 +43,15 @@ jobs:
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         continue-on-error: true
         run: poetry install --no-interaction --no-root
-      - name: Install dependencies (install torch-scatter)
+      #----------------------------------------------
+      # install cuda related dependencies
+      #----------------------------------------------
+      - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
+        run: poetry run pip install torch
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry run pip install torch-scatter
       #----------------------------------------------
       # install your root project, if required
       #----------------------------------------------
