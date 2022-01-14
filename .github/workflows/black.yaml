@@ -1,4 +1,4 @@
-name: Tests
+name: Black
 
 on:
   push:
@@ -61,6 +61,6 @@ jobs:
       # format, type check, and test your code
       #----------------------------------------------
 
-      - name: Run tests
+      - name: Black code formatting
         run: |
-          poetry run pytest -v
+          poetry run black --check --diff .

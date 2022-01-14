@@ -1,4 +1,4 @@
-name: Tests
+name: MyPy
 
 on:
   push:
@@ -61,6 +61,9 @@ jobs:
       # format, type check, and test your code
       #----------------------------------------------
 
-      - name: Run tests
+      - name: MyPy
         run: |
-          poetry run pytest -v
+          poetry run mypy enn_zoo
+          poetry run mypy entity_gym
+          poetry run mypy rogue_net
+          poetry run mypy enn_ppo
