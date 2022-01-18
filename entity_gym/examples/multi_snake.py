@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, List, Mapping, Sequence, Tuple
+from typing import Dict, List, Mapping, Sequence, Tuple, Type
 import random
 import numpy as np
 from copy import deepcopy
@@ -11,7 +11,6 @@ from entity_gym.environment import (
     Environment,
     EpisodeStats,
     ObsSpace,
-    Type,
     CategoricalActionSpace,
     ActionSpace,
     Observation,

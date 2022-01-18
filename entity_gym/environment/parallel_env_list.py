@@ -1,0 +1,202 @@
+import multiprocessing as mp
+import multiprocessing.connection as conn
+from multiprocessing.connection import Connection
+from typing import (
+    Any,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    Generator,
+)
+import cloudpickle
+from entity_gym.environment.environment import (
+    Action,
+    Environment,
+    ObsSpace,
+    Observation,
+)
+from entity_gym.serialization.msgpack_ragged import (
+    ragged_buffer_encode,
+    ragged_buffer_decode,
+)
+from entity_gym.environment.vec_env import (
+    ObsBatch,
+    VecEnv,
+    batch_obs,
+)
+from entity_gym.environment.env_list import EnvList
+import msgpack_numpy
+
+
+class CloudpickleWrapper:
+    def __init__(self, var: Any):
+        self.var = var
+
+    def __getstate__(self) -> Any:
+        return cloudpickle.dumps(self.var)
+
+    def __setstate__(self, var: Any) -> None:
+        self.var = cloudpickle.loads(var)
+
+
+class MsgpackConnectionWrapper(object):
+    """
+    Use msgpack instead of pickle to send and recieve data from workers.
+    """
+
+    def __init__(self, conn: Connection) -> None:
+        self._conn = conn
+
+    def close(self) -> None:
+        self._conn.close()
+
+    def send(self, data: Any) -> None:
+        s = msgpack_numpy.dumps(data, default=ragged_buffer_encode)
+        self._conn.send_bytes(s)
+
+    def recv(self) -> Any:
+        data_bytes = self._conn.recv_bytes()
+        return msgpack_numpy.loads(
+            data_bytes,
+            object_hook=ragged_buffer_decode,
+            strict_map_key=False,
+        )
+
+
+def _worker(
+    remote: conn.Connection,
+    parent_remote: conn.Connection,
+    env_list_config: CloudpickleWrapper,
+) -> None:
+    parent_remote.close()
+    env_args = env_list_config.var
+    envs = EnvList(*env_args)
+    while True:
+        try:
+            cmd, data = remote.recv()
+            if cmd == "act":
+                observation = envs.act(data[0], data[1])
+                remote.send(observation)
+            elif cmd == "reset":
+                observation = envs.reset(data)
+                remote.send(observation)
+            elif cmd == "close":
+                envs.close()
+                remote.close()
+                break
+            else:
+                raise NotImplementedError(f"`{cmd}` is not implemented in the worker")
+        except EOFError:
+            break
+
+
+class ParallelEnvList(VecEnv):
+    """
+    We fork the subprocessing from the stable-baselines implementation, but use RaggedBuffers for collecting batches
+
+    Citation here: https://github.com/DLR-RM/stable-baselines3/blob/master/CITATION.bib
+    """
+
+    def __init__(
+        self,
+        env_cls: Type[Environment],
+        env_kwargs: Dict[str, Any],
+        num_envs: int,
+        num_processes: int,
+        start_method: Optional[str] = None,
+    ):
+
+        if start_method is None:
+            # Fork is not a thread safe method (see issue #217)
+            # but is more user friendly (does not require to wrap the code in
+            # a `if __name__ == "__main__":`)
+            forkserver_available = "forkserver" in mp.get_all_start_methods()
+            start_method = "forkserver" if forkserver_available else "spawn"
+        ctx = mp.get_context(start_method)
+
+        assert (
+            num_envs % num_processes == 0
+        ), "The required number of environments can not be equally split into the number of specified processes."
+
+        self.num_processes = num_processes
+        self.num_envs = num_envs
+        self.envs_per_process = int(num_envs / num_processes)
+
+        env_list_configs = [
+            (env_cls, env_kwargs, self.envs_per_process)
+            for _ in range(self.num_processes)
+        ]
+
+        self.remotes = []
+        self.work_remotes = []
+        for i in range(self.num_processes):
+            pipe = ctx.Pipe()
+            self.remotes.append(MsgpackConnectionWrapper(pipe[0]))
+            self.work_remotes.append(MsgpackConnectionWrapper(pipe[1]))
+
+        self.processes = []
+        for work_remote, remote, env_list_config in zip(
+            self.work_remotes, self.remotes, env_list_configs
+        ):
+            # Have to use cloudpickle wrapper here to serialize the ABCMeta class reference
+            # TODO: Can this be achieved with custom msgpack somehow?
+            args = (work_remote, remote, CloudpickleWrapper(env_list_config))
+            # daemon=True: if the main process crashes, we should not cause things to hang
+            process = ctx.Process(
+                target=_worker, args=args, daemon=True
+            )  # pytype:disable=attribute-error
+            process.start()
+            self.processes.append(process)
+            work_remote.close()
+
+        self.cls = env_cls
+
+    def env_cls(cls) -> Type[Environment]:
+        return cls.cls
+
+    def reset(self, obs_space: ObsSpace) -> ObsBatch:
+        for remote in self.remotes:
+            remote.send(("reset", obs_space))
+
+        # Empty initialized observation batch
+        observations = batch_obs([], self.cls.obs_space(), self.cls.action_space())
+
+        for remote in self.remotes:
+            remote_obs_batch = remote.recv()
+            observations.merge_obs(remote_obs_batch)
+
+        assert isinstance(observations, ObsBatch)
+        return observations
+
+    def close(self) -> None:
+        for remote in self.remotes:
+            remote.send(("close", None))
+        for process in self.processes:
+            process.join()
+
+    def _chunk_actions(
+        self, actions: Sequence[Mapping[str, Action]]
+    ) -> Generator[Sequence[Mapping[str, Action]], List[Observation], None]:
+        for i in range(0, len(actions), self.envs_per_process):
+            yield actions[i : i + self.envs_per_process]
+
+    def act(
+        self, actions: Sequence[Mapping[str, Action]], obs_space: ObsSpace
+    ) -> ObsBatch:
+        remote_actions = self._chunk_actions(actions)
+        for remote, action in zip(self.remotes, remote_actions):
+            remote.send(("act", (action, obs_space)))
+
+        # Empty initialized observation batch
+        observations = batch_obs([], self.cls.obs_space(), self.cls.action_space())
+
+        for remote in self.remotes:
+            remote_obs_batch = remote.recv()
+            observations.merge_obs(remote_obs_batch)
+        return observations
+
+    def __len__(self) -> int:
+        return self.num_envs

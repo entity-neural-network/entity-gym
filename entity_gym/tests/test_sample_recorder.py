@@ -1,8 +1,7 @@
 import numpy as np
 import tempfile
-from entity_gym.sample_recorder import Sample, SampleRecorder, Trace
+from entity_gym.serialization import Sample, SampleRecorder, Trace
 from entity_gym.environment import CategoricalActionMaskBatch, ObsBatch
-from numpy.lib.twodim_base import mask_indices
 from ragged_buffer import RaggedBufferF32, RaggedBufferI64
 
 

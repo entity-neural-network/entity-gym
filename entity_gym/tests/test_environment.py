@@ -1,5 +1,6 @@
-from entity_gym.envs.cherry_pick import CherryPick
-from entity_gym.environment import EnvList, ParallelEnvList
+from entity_gym.examples.cherry_pick import CherryPick
+from entity_gym.environment.env_list import EnvList
+from entity_gym.environment.parallel_env_list import ParallelEnvList
 from entity_gym.environment import (
     SelectEntityActionSpace,
     CategoricalActionSpace,
@@ -13,8 +14,8 @@ from entity_gym.environment import (
     ObsBatch,
     ActionSpace,
     Entity,
-    batch_obs,
 )
+from entity_gym.environment.vec_env import batch_obs
 import numpy as np
 from typing import Dict
 

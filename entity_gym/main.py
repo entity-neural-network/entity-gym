@@ -12,7 +12,7 @@ from entity_gym.environment import (
     SelectEntityAction,
     SelectEntityActionSpace,
 )
-from entity_gym.envs import ENV_REGISTRY
+from entity_gym.examples import ENV_REGISTRY
 
 
 def print_obs(obs: Observation, total_reward: float, obs_filter: ObsSpace) -> None:
