@@ -430,6 +430,13 @@ class VecEnv(ABC):
     ) -> ObsBatch:
         raise NotImplementedError
 
+    @abstractmethod
+    def __len__(self) -> int:
+        raise NotImplementedError
+
+    def close(self) -> None:
+        pass
+
 
 class EnvList(VecEnv):
     def __init__(
@@ -468,6 +475,9 @@ class EnvList(VecEnv):
             else:
                 observations.append(obs)
         return batch_obs(observations, self.cls.obs_space(), self.cls.action_space())
+
+    def __len__(self) -> int:
+        return len(self.envs)
 
 
 class CloudpickleWrapper:
@@ -687,3 +697,6 @@ class ParallelEnvList(VecEnv):
             remote_obs_batch = remote.recv()
             observations.merge_obs(remote_obs_batch)
         return observations
+
+    def __len__(self) -> int:
+        return self.num_envs
