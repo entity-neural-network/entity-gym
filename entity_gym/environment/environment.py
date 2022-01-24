@@ -171,6 +171,15 @@ class Environment(ABC):
     def reset(self, obs_filter: ObsSpace) -> Observation:
         return self.__class__.filter_obs(self._reset(), obs_filter)
 
+    def render(self, **kwargs: Any) -> npt.NDArray[np.uint8]:
+        """
+        Renders the environment
+
+        Args:
+            **kwargs: a dictionary of arguments to send to the rendering process
+        """
+        raise NotImplementedError
+
     def act(self, action: Mapping[str, Action], obs_filter: ObsSpace) -> Observation:
         return self.__class__.filter_obs(self._act(action), obs_filter)
 

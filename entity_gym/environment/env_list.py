@@ -16,6 +16,9 @@ from entity_gym.environment.vec_env import (
     batch_obs,
 )
 
+import numpy as np
+import numpy.typing as npt
+
 
 class EnvList(VecEnv):
     def __init__(
@@ -33,6 +36,9 @@ class EnvList(VecEnv):
             self.cls.obs_space(),
             self.cls.action_space(),
         )
+
+    def render(self, **kwargs: Any) -> npt.NDArray[np.uint8]:
+        return np.stack([e.render(**kwargs) for e in self.envs])
 
     def close(self) -> None:
         for env in self.envs:

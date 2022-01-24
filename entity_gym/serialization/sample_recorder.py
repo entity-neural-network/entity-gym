@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, List, Mapping, Optional, Sequence, Type
+from typing import Dict, List, Mapping, Optional, Sequence, Type, Any
 
 from ragged_buffer import RaggedBufferF32
 import numpy as np
@@ -125,6 +125,9 @@ class SampleRecordingVecEnv(VecEnv):
             )
         )
         return self.record_obs(self.inner.act(actions, obs_filter))
+
+    def render(self, **kwargs: Any) -> np.ndarray:
+        return self.inner.render(**kwargs)
 
     def env_cls(cls) -> Type[Environment]:
         return super().env_cls()

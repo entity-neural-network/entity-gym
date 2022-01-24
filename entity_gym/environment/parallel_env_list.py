@@ -1,6 +1,8 @@
 import multiprocessing as mp
 import multiprocessing.connection as conn
 from multiprocessing.connection import Connection
+import numpy as np
+import numpy.typing as npt
 from typing import (
     Any,
     Dict,
@@ -83,6 +85,9 @@ def _worker(
             elif cmd == "reset":
                 observation = envs.reset(data)
                 remote.send(observation)
+            elif cmd == "render":
+                rgb_pixels = envs.render(**data)
+                remote.send(rgb_pixels)
             elif cmd == "close":
                 envs.close()
                 remote.close()
@@ -170,6 +175,16 @@ class ParallelEnvList(VecEnv):
 
         assert isinstance(observations, ObsBatch)
         return observations
+
+    def render(self, **kwargs: Any) -> npt.NDArray[np.uint8]:
+        rgb_arrays = []
+        for remote in self.remotes:
+            remote.send(("render", kwargs))
+            rgb_arrays.append(remote.recv())
+
+        np_rgb_arrays = np.concatenate(rgb_arrays)
+        assert isinstance(np_rgb_arrays, np.ndarray)
+        return np_rgb_arrays
 
     def close(self) -> None:
         for remote in self.remotes:
