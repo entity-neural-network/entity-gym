@@ -83,13 +83,16 @@ class EpisodeStats:
 class Observation:
     entities: Dict[str, np.ndarray]
     """Maps each entity type to an array with the features for each observed entity of that type."""
+
     ids: Sequence[EntityID]
     """
     Maps each entity index to an opaque identifier used by the environment to
     identify that entity.
     """
+
     action_masks: Mapping[str, ActionMask]
     """Maps each action to an action mask."""
+
     reward: float
     done: bool
     end_of_episode_info: Optional[EpisodeStats] = None
