@@ -1,4 +1,5 @@
 from entity_gym.examples.cherry_pick import CherryPick
+from entity_gym.examples.xor import Xor
 from entity_gym.environment.env_list import EnvList
 from entity_gym.environment.parallel_env_list import ParallelEnvList
 from entity_gym.environment import (
@@ -9,6 +10,7 @@ from entity_gym.environment import (
     CategoricalActionMaskBatch,
     SelectEntityActionMaskBatch,
     SelectEntityAction,
+    CategoricalAction,
     Observation,
     ObsSpace,
     ObsBatch,
@@ -56,8 +58,15 @@ def test_parallel_env_list() -> None:
         {"Pick Cherry": SelectEntityAction(actions=[("Player", "Cherry 1")])}
     ] * 100
     obs_act = envs.act(actions, obs_space)
-
     assert len(obs_act.ids) == 100
+
+    envs = ParallelEnvList(Xor, {}, 100, 10)
+    obs_reset = envs.reset(Xor.obs_space())
+    assert len(obs_reset.ids) == 100
+    actions_xor = [{"output": CategoricalAction(actions=[(0, 0)])}] * 100
+    obs_act = envs.act(actions_xor, Xor.obs_space())
+    assert len(obs_act.ids) == 100
+    assert len(obs_act.end_of_episode_info) == 100
 
 
 def test_batch_obs_entities() -> None:

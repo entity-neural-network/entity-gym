@@ -118,6 +118,7 @@ class ObsBatch:
         """
         Merges ObsBatch b into this batch
         """
+        envs = len(self.ids)
 
         # merge entities
         for k in b.entities.keys():
@@ -133,7 +134,8 @@ class ObsBatch:
         self.reward = np.concatenate((self.reward, b.reward))
         self.done = np.concatenate((self.done, b.done))
 
-        self.end_of_episode_info.update(b.end_of_episode_info)
+        for i, stats in b.end_of_episode_info.items():
+            self.end_of_episode_info[i + envs] = stats
 
 
 class VecEnv(ABC):
