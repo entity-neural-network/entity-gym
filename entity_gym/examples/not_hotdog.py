@@ -38,6 +38,7 @@ class NotHotdog(Environment):
     def action_space(cls) -> Dict[str, ActionSpace]:
         return {
             "classify": CategoricalActionSpace(["hotdog", "not_hotdog"]),
+            "unused_action": CategoricalActionSpace(["0", "1"]),
         }
 
     def _reset(self) -> Observation:
@@ -86,6 +87,9 @@ class NotHotdog(Environment):
             },
             action_masks={
                 "classify": DenseCategoricalActionMask(actors=np.array([0]), mask=None),
+                "unused_action": DenseCategoricalActionMask(
+                    actors=np.zeros((0, 1), dtype=np.int64), mask=None
+                ),
             },
             ids=[0],
             reward=reward,
