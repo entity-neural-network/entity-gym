@@ -5,7 +5,7 @@ from typing import Dict, Mapping
 
 from entity_gym.environment import (
     CategoricalAction,
-    DenseCategoricalActionMask,
+    CategoricalActionMask,
     Entity,
     Environment,
     CategoricalActionSpace,
@@ -41,18 +41,18 @@ class NotHotdog(Environment):
             "unused_action": CategoricalActionSpace(["0", "1"]),
         }
 
-    def _reset(self) -> Observation:
+    def reset(self) -> Observation:
         self.step = 0
         self.is_hotdog = random.randint(0, 1)
         self.hotdog_object = random.randint(0, 1) == 1
         return self.observe()
 
-    def _act(self, action: Mapping[str, Action]) -> Observation:
+    def act(self, action: Mapping[str, Action]) -> Observation:
         self.step += 1
 
         a = action["classify"]
         assert isinstance(a, CategoricalAction), f"{a} is not a CategoricalAction"
-        if a.actions[0][1] == self.is_hotdog:
+        if a.actions[0] == self.is_hotdog:
             reward = 1
         else:
             reward = 0
@@ -61,7 +61,7 @@ class NotHotdog(Environment):
 
     def observe(self, done: bool = False, reward: float = 0) -> Observation:
         return Observation(
-            entities={
+            features={
                 "Player": np.array(
                     [
                         [
@@ -85,13 +85,11 @@ class NotHotdog(Environment):
                 if self.hotdog_object and self.is_hotdog == 1
                 else np.zeros((0, 0), dtype=np.float32),
             },
-            action_masks={
-                "classify": DenseCategoricalActionMask(actors=np.array([0]), mask=None),
-                "unused_action": DenseCategoricalActionMask(
-                    actors=np.zeros((0, 1), dtype=np.int64), mask=None
-                ),
+            actions={
+                "classify": CategoricalActionMask(actor_ids=[0]),
+                "unused_action": CategoricalActionMask(actor_ids=[]),
             },
-            ids=[0],
+            ids={"Player": [0]},
             reward=reward,
             done=done,
             end_of_episode_info=EpisodeStats(self.step, reward) if done else None,

@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field
+from entity_gym.environment.environment import ActionType
 import numpy as np
 import random
 from typing import Dict, List, Mapping
 
 from entity_gym.environment import (
-    DenseSelectEntityActionMask,
+    SelectEntityActionMask,
     Entity,
     Environment,
     EpisodeStats,
@@ -60,10 +61,10 @@ class PickMatchingBalls(Environment):
         )
 
     @classmethod
-    def action_space(cls) -> Dict[str, ActionSpace]:
+    def action_space(cls) -> Dict[ActionType, ActionSpace]:
         return {"Pick Ball": SelectEntityActionSpace()}
 
-    def _reset(self) -> Observation:
+    def reset(self) -> Observation:
         num_balls = (
             self.max_balls if not self.randomize else random.randint(3, self.max_balls)
         )
@@ -89,7 +90,7 @@ class PickMatchingBalls(Environment):
             reward = 0.0
 
         return Observation(
-            entities={
+            features={
                 "Ball": np.array(
                     [
                         [float(b.color == c) for c in range(6)] + [float(b.selected)]
@@ -104,13 +105,14 @@ class PickMatchingBalls(Environment):
                 ),
                 "Player": np.zeros([1, 0], dtype=np.float32),
             },
-            ids=np.arange(len(self.balls) + 1),
-            action_masks={
-                "Pick Ball": DenseSelectEntityActionMask(
-                    actors=np.array([len(self.balls)]),
-                    actees=np.array(
-                        [i for i, b in enumerate(self.balls) if not b.selected]
-                    ),
+            ids={
+                "Ball": list(range(len(self.balls))),
+                "Player": [len(self.balls)],
+            },
+            actions={
+                "Pick Ball": SelectEntityActionMask(
+                    actor_ids=[len(self.balls)],
+                    actee_ids=[i for i, b in enumerate(self.balls) if not b.selected],
                 ),
             },
             reward=reward,
@@ -118,10 +120,10 @@ class PickMatchingBalls(Environment):
             end_of_episode_info=EpisodeStats(self.step, reward) if done else None,
         )
 
-    def _act(self, actions: Mapping[str, Action]) -> Observation:
+    def act(self, actions: Mapping[ActionType, Action]) -> Observation:
         action = actions["Pick Ball"]
         assert isinstance(action, SelectEntityAction)
-        for _, selected_ball in action.actions:
+        for selected_ball in action.actees:
             assert not self.balls[selected_ball].selected
             self.balls[selected_ball].selected = True
         self.step += 1

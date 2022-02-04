@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Dict, List, Mapping, Optional, Sequence, Type, Any
 
-from ragged_buffer import RaggedBufferF32
+from ragged_buffer import RaggedBufferF32, RaggedBufferI64
 import numpy as np
 import msgpack_numpy
 
@@ -9,7 +9,7 @@ from entity_gym.environment import (
     Action,
     ActionSpace,
     Environment,
-    ObsBatch,
+    VecObs,
     ObsSpace,
     VecEnv,
 )
@@ -21,10 +21,10 @@ from entity_gym.serialization.msgpack_ragged import (
 
 @dataclass
 class Sample:
-    obs: ObsBatch
+    obs: VecObs
     step: List[int]
     episode: List[int]
-    actions: Sequence[Mapping[str, Action]]
+    actions: Mapping[str, RaggedBufferI64]
     probs: Dict[str, RaggedBufferF32]
     logits: Optional[Dict[str, RaggedBufferF32]]
 
@@ -82,17 +82,17 @@ class SampleRecordingVecEnv(VecEnv):
         self.sample_recorder = SampleRecorder(
             out_path, inner.env_cls().action_space(), inner.env_cls().obs_space()
         )
-        self.last_obs: Optional[ObsBatch] = None
+        self.last_obs: Optional[VecObs] = None
         self.episodes = list(range(len(inner)))
         self.curr_step = [0] * len(inner)
         self.next_episode = len(inner)
 
-    def reset(self, obs_config: ObsSpace) -> ObsBatch:
+    def reset(self, obs_config: ObsSpace) -> VecObs:
         self.curr_step = [0] * len(self)
         self.last_obs = self.record_obs(self.inner.reset(obs_config))
         return self.last_obs
 
-    def record_obs(self, obs: ObsBatch) -> ObsBatch:
+    def record_obs(self, obs: VecObs) -> VecObs:
         for i, done in enumerate(obs.done):
             if done:
                 self.episodes[i] = self.next_episode
@@ -105,11 +105,11 @@ class SampleRecordingVecEnv(VecEnv):
 
     def act(
         self,
-        actions: Sequence[Mapping[str, Action]],
+        actions: Mapping[str, RaggedBufferI64],
         obs_filter: ObsSpace,
         probs: Optional[Dict[str, RaggedBufferF32]] = None,
         logits: Optional[Dict[str, RaggedBufferF32]] = None,
-    ) -> ObsBatch:
+    ) -> VecObs:
         if probs is None:
             probs = {}
         # with tracer.span("record_samples"):

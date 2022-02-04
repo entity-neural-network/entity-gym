@@ -5,7 +5,7 @@ from typing import Dict, Mapping
 
 from entity_gym.environment import (
     CategoricalAction,
-    DenseCategoricalActionMask,
+    CategoricalActionMask,
     Environment,
     CategoricalActionSpace,
     ActionSpace,
@@ -52,7 +52,7 @@ class FloorIsLava(Environment):
             "move": CategoricalActionSpace(["n", "ne", "e", "se", "s", "sw", "w", "nw"])
         }
 
-    def reset(self, obs_space: ObsSpace) -> Observation:
+    def reset_filter(self, obs_space: ObsSpace) -> Observation:
         width = 1000
         x = random.randint(-width, width)
         y = random.randint(-width, width)
@@ -72,37 +72,31 @@ class FloorIsLava(Environment):
         obs = self.observe(obs_space)
         return obs
 
-    def _reset(self) -> Observation:
-        return self.reset(FloorIsLava.obs_space())
+    def reset(self) -> Observation:
+        return self.reset_filter(FloorIsLava.obs_space())
 
-    def act(self, action: Mapping[str, Action], obs_filter: ObsSpace) -> Observation:
+    def act_filter(
+        self, action: Mapping[str, Action], obs_filter: ObsSpace
+    ) -> Observation:
         for action_name, a in action.items():
             assert isinstance(a, CategoricalAction) and action_name == "move"
-            if a.actions[0][1] == 0:
-                self.player.y += 1
-            elif a.actions[0][1] == 1:
-                self.player.y += 1
-                self.player.x += 1
-            elif a.actions[0][1] == 2:
-                self.player.x += 1
-            elif a.actions[0][1] == 3:
-                self.player.y -= 1
-                self.player.x += 1
-            elif a.actions[0][1] == 4:
-                self.player.y -= 1
-            elif a.actions[0][1] == 5:
-                self.player.y -= 1
-                self.player.x -= 1
-            elif a.actions[0][1] == 6:
-                self.player.x -= 1
-            elif a.actions[0][1] == 7:
-                self.player.y += 1
-                self.player.x -= 1
+            dx, dy = [
+                (0, 1),
+                (1, 1),
+                (1, 0),
+                (1, -1),
+                (0, -1),
+                (-1, -1),
+                (-1, 0),
+                (-1, 1),
+            ][a.actions[0]]
+            self.player.x += dx
+            self.player.y += dy
         obs = self.observe(obs_filter, done=True)
         return obs
 
-    def _act(self, action: Mapping[str, Action]) -> Observation:
-        return self.act(
+    def act(self, action: Mapping[str, Action]) -> Observation:
+        return self.act_filter(
             action,
             FloorIsLava.obs_space(),
         )
@@ -117,7 +111,7 @@ class FloorIsLava(Environment):
         else:
             reward = 0.0
         return Observation(
-            entities=extract_features(
+            features=extract_features(
                 {
                     "Player": [self.player],
                     "Lava": self.lava,
@@ -125,10 +119,10 @@ class FloorIsLava(Environment):
                 },
                 obs_filter,
             ),
-            action_masks={
-                "move": DenseCategoricalActionMask(actors=np.array([0]), mask=None),
+            actions={
+                "move": CategoricalActionMask(actor_types=["Player"]),
             },
-            ids=list(range(3)),
+            ids={"Player": [0]},
             reward=reward,
             done=done,
             end_of_episode_info=EpisodeStats(1, reward) if done else None,

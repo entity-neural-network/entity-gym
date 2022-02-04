@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import (
     Any,
     Dict,
+    Generator,
     List,
     Mapping,
     Optional,
@@ -13,6 +14,11 @@ from typing import (
 )
 import numpy as np
 import numpy.typing as npt
+
+
+EntityID = Any
+EntityType = str
+ActionType = str
 
 
 @dataclass
@@ -29,73 +35,91 @@ ActionSpace = Union[CategoricalActionSpace, SelectEntityActionSpace]
 
 
 @dataclass
-class ActionMask(ABC):
-    """
-    Base class for action masks that specify what agents can perform a particular action.
-    """
-
-    actors: npt.NDArray[np.int64]
-    """
-    The indices of the entities that can perform the action.
-    """
-
-
-@dataclass
-class DenseCategoricalActionMask(ActionMask):
+class CategoricalActionMask:
     """
     Action mask for categorical action that specifies which agents can perform the action,
     and includes a dense mask that further contraints the choices available to each agent.
     """
 
-    mask: Optional[np.ndarray] = None
+    actor_ids: Optional[Sequence[EntityID]] = None
+    """
+    The ids of the entities that can perform the action.
+    If None, all entities can perform the action.
+    """
+
+    actor_types: Optional[Sequence[EntityType]] = None
+    """
+    The types of the entities that can perform the action.
+    If None, all entities can perform the action.
+    """
+
+    mask: Union[Sequence[Sequence[bool]], np.ndarray, None] = None
     """
     A boolean array of shape (len(actors), len(choices)). If mask[i, j] is True, then
     agent i can perform action j.
     """
 
+    def __post_init__(self) -> None:
+        assert (
+            self.actor_ids is None or self.actor_types is None
+        ), "Only one of actor_ids or actor_types can be specified"
+
 
 @dataclass
-class DenseSelectEntityActionMask(ActionMask):
+class SelectEntityActionMask:
     """
     Action mask for select entity action that specifies which agents can perform the action,
     and includes a dense mask that further contraints what other entities can be selected by
     each actor.
     """
 
-    actees: npt.NDArray[np.int64]
-    mask: Optional[np.ndarray] = None
+    actor_ids: Optional[Sequence[EntityID]] = None
     """
-    An boolean array of shape (len(actors), len(entities)). If mask[i, j] is True, then
+    The ids of the entities that can perform the action.
+    If None, all entities can perform the action.
+    """
+
+    actor_types: Optional[Sequence[EntityType]] = None
+    """
+    The types of the entities that can perform the action.
+    If None, all entities can perform the action.
+    """
+
+    actee_types: Optional[Sequence[EntityType]] = None
+    """
+    The types of entities that can be selected by each actor.
+    If None, all entities types can be selected by each actor.
+    """
+
+    actee_ids: Optional[Sequence[EntityID]] = None
+    """
+    The ids of the entities of each type that can be selected by each actor.
+    If None, all entities can be selected by each actor.
+    """
+
+    mask: Optional[npt.NDArray[np.bool_]] = None
+    """
+    An boolean array of shape (len(actors), len(actees)). If mask[i, j] is True, then
     agent i can select entity j.
+    (NOT CURRENTLY IMPLEMENTED)
     """
 
+    def __post_init__(self) -> None:
+        assert (
+            self.actor_ids is None or self.actor_types is None
+        ), "Only one of actor_ids or actor_types can be specified"
+        assert (
+            self.actee_types is None or self.actee_ids is None
+        ), "Either actee_entity_types or actees can be specified, but not both."
 
-EntityID = Any
+
+ActionMask = Union[CategoricalActionMask, SelectEntityActionMask]
 
 
 @dataclass
 class EpisodeStats:
     length: int
     total_reward: float
-
-
-@dataclass
-class Observation:
-    entities: Dict[str, np.ndarray]
-    """Maps each entity type to an array with the features for each observed entity of that type."""
-
-    ids: Sequence[EntityID]
-    """
-    Maps each entity index to an opaque identifier used by the environment to
-    identify that entity.
-    """
-
-    action_masks: Mapping[str, ActionMask]
-    """Maps each action to an action mask."""
-
-    reward: float
-    done: bool
-    end_of_episode_info: Optional[EpisodeStats] = None
 
 
 @dataclass
@@ -109,21 +133,144 @@ class ObsSpace:
 
 
 @dataclass
+class EntityObs:
+    features: Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
+    ids: Optional[Sequence[EntityID]] = None
+
+
+@dataclass
+class Observation:
+    features: Mapping[
+        EntityType, Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
+    ]
+    actions: Mapping[ActionType, ActionMask]
+    done: bool
+    reward: float
+    ids: Mapping[EntityType, Sequence[EntityID]] = field(default_factory=dict)
+    end_of_episode_info: Optional[EpisodeStats] = None
+
+    def __post_init__(self) -> None:
+        self._id_to_index: Optional[Dict[EntityID, int]] = None
+        self._index_to_id: Optional[List[EntityID]] = None
+
+    @classmethod
+    def from_entity_obs(
+        cls,
+        entities: Mapping[EntityType, Optional[EntityObs]],
+        actions: Mapping[ActionType, ActionMask],
+        done: bool,
+        reward: float,
+        end_of_episode_info: Optional[EpisodeStats] = None,
+    ) -> "Observation":
+        return cls(
+            features={
+                etype: entity.features
+                for etype, entity in entities.items()
+                if entity is not None
+            },
+            actions=actions,
+            done=done,
+            reward=reward,
+            ids={
+                etype: entity.ids
+                for etype, entity in entities.items()
+                if entity is not None and entity.ids is not None
+            },
+            end_of_episode_info=end_of_episode_info,
+        )
+
+    def _actor_indices(
+        self, atype: ActionType, obs_space: ObsSpace
+    ) -> npt.NDArray[np.int64]:
+        action = self.actions[atype]
+        if action.actor_ids is not None:
+            id_to_index = self.id_to_index(obs_space)
+            return np.array(
+                [id_to_index[id] for id in action.actor_ids], dtype=np.int64
+            )
+        elif action.actor_types is not None:
+            ids: List[int] = []
+            id_to_index = self.id_to_index(obs_space)
+            for etype in action.actor_types:
+                ids.extend(id_to_index[id] for id in self.ids[etype])
+            return np.array(ids, dtype=np.int64)
+        else:
+            return np.arange(  # type: ignore
+                sum(len(self.ids[etype]) for etype in obs_space.entities),
+                dtype=np.int64,
+            )
+
+    def _actee_indices(
+        self, atype: ActionType, obs_space: ObsSpace
+    ) -> npt.NDArray[np.int64]:
+        action = self.actions[atype]
+        assert isinstance(action, SelectEntityActionMask)
+        if action.actee_ids is not None:
+            id_to_index = self.id_to_index(obs_space)
+            return np.array(
+                [id_to_index[id] for id in action.actee_ids], dtype=np.int64
+            )
+        elif action.actee_types is not None:
+            ids: List[int] = []
+            id_to_index = self.id_to_index(obs_space)
+            for etype in action.actee_types:
+                ids.extend(id_to_index[id] for id in self.ids[etype])
+            return np.array(ids, dtype=np.int64)
+        else:
+            return np.arange(  # type: ignore
+                sum(len(self.ids[etype]) for etype in obs_space.entities),
+                dtype=np.int64,
+            )
+
+    def id_to_index(self, obs_space: ObsSpace) -> Dict[EntityID, int]:
+        offset = 0
+        if self._id_to_index is None:
+            self._id_to_index = {}
+            for etype in obs_space.entities.keys():
+                ids = self.ids.get(etype)
+                if ids is None:
+                    continue
+                for i, id in enumerate(ids):
+                    self._id_to_index[id] = i + offset
+                offset += len(ids)
+        return self._id_to_index
+
+    def index_to_id(self, obs_space: ObsSpace) -> List[EntityID]:
+        if self._index_to_id is None:
+            self._index_to_id = []
+            for etype in obs_space.entities.keys():
+                ids = self.ids.get(etype)
+                if ids is None:
+                    ids = [None] * self.num_entities(etype)
+                self._index_to_id.extend(ids)
+        return self._index_to_id
+
+    def num_entities(self, entity: EntityType) -> int:
+        feats = self.features[entity]
+        if isinstance(feats, np.ndarray):
+            return feats.shape[0]
+        else:
+            return len(feats)
+
+
+@dataclass
 class CategoricalAction:
-    # TODO: figure out best representation
-    actions: List[Tuple[EntityID, int]]
-    # actions: np.ndarray
-    """
-    Maps each actor to the index of the chosen action.
-    Given `Observation` obs and `ActionMask` mask, the `EntityID`s of the corresponding
-    actors are given as `obs.ids[mask.actors]`.
-    """
+    actors: Sequence[EntityID]
+    actions: npt.NDArray[np.int64]
+
+    def items(self) -> Generator[Tuple[EntityID, int], None, None]:
+        for i, j in zip(self.actors, self.actions):
+            yield i, j
 
 
 @dataclass
 class SelectEntityAction:
-    actions: List[Tuple[EntityID, EntityID]]
-    """Maps each actor to the entity they selected."""
+    actors: Sequence[EntityID]
+    actees: Sequence[EntityID]
+
+    def items(self) -> Generator[Tuple[EntityID, EntityID], None, None]:
+        for i, j in zip(self.actors, self.actees):
+            yield i, j
 
 
 Action = Union[CategoricalAction, SelectEntityAction]
@@ -132,10 +279,6 @@ Action = Union[CategoricalAction, SelectEntityAction]
 class Environment(ABC):
     """
     Abstraction over reinforcement learning environments with observations based on structured lists of entities.
-
-    As a simple hack to support basic multi-agent environments with parallel observations and actions,
-    methods may return lists of observations and accept lists of actions.
-    This should be replaced by a more general multi-agent environment interface in the future.
     """
 
     @classmethod
@@ -155,14 +298,14 @@ class Environment(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _reset(self) -> Observation:
+    def reset(self) -> Observation:
         """
         Resets the environment and returns the initial observation.
         """
         raise NotImplementedError
 
     @abstractmethod
-    def _act(self, action: Mapping[str, Action]) -> Observation:
+    def act(self, action: Mapping[ActionType, Action]) -> Observation:
         """
         Performs the given action and returns the resulting observation.
 
@@ -171,8 +314,8 @@ class Environment(ABC):
         """
         raise NotImplementedError
 
-    def reset(self, obs_filter: ObsSpace) -> Observation:
-        return self.__class__.filter_obs(self._reset(), obs_filter)
+    def reset_filter(self, obs_filter: ObsSpace) -> Observation:
+        return self.__class__.filter_obs(self.reset(), obs_filter)
 
     def render(self, **kwargs: Any) -> npt.NDArray[np.uint8]:
         """
@@ -183,8 +326,10 @@ class Environment(ABC):
         """
         raise NotImplementedError
 
-    def act(self, action: Mapping[str, Action], obs_filter: ObsSpace) -> Observation:
-        return self.__class__.filter_obs(self._act(action), obs_filter)
+    def act_filter(
+        self, action: Mapping[ActionType, Action], obs_filter: ObsSpace
+    ) -> Observation:
+        return self.__class__.filter_obs(self.act(action), obs_filter)
 
     def close(self) -> None:
         pass
@@ -192,19 +337,24 @@ class Environment(ABC):
     @classmethod
     def filter_obs(cls, obs: Observation, obs_filter: ObsSpace) -> Observation:
         selectors = cls._compile_feature_filter(obs_filter)
-        entities = {
-            entity_name: entity_features[:, selectors[entity_name]].reshape(
-                entity_features.shape[0], len(selectors[entity_name])
-            )
-            for entity_name, entity_features in obs.entities.items()
-        }
+        features: Dict[
+            EntityType, Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
+        ] = {}
+        for etype, feats in obs.features.items():
+            selector = selectors[etype]
+            if isinstance(feats, np.ndarray):
+                features[etype] = feats[:, selector].reshape(
+                    feats.shape[0], len(selector)
+                )
+            else:
+                features[etype] = [[entity[i] for i in selector] for entity in feats]
         return Observation(
-            entities,
-            obs.ids,
-            obs.action_masks,
-            obs.reward,
-            obs.done,
-            obs.end_of_episode_info,
+            features=features,
+            actions=obs.actions,
+            done=obs.done,
+            reward=obs.reward,
+            ids=obs.ids,
+            end_of_episode_info=obs.end_of_episode_info,
         )
 
     @classmethod

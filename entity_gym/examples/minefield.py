@@ -5,7 +5,7 @@ from typing import Dict, List, Mapping, Tuple
 
 from entity_gym.environment import (
     CategoricalAction,
-    DenseCategoricalActionMask,
+    CategoricalActionMask,
     Entity,
     Environment,
     CategoricalActionSpace,
@@ -66,7 +66,7 @@ class Minefield(Environment):
             )
         }
 
-    def reset(self, obs_space: ObsSpace) -> Observation:
+    def reset_filter(self, obs_space: ObsSpace) -> Observation:
         def randpos() -> Tuple[float, float]:
             return (
                 random.uniform(-self.width / 2, self.width / 2),
@@ -91,14 +91,16 @@ class Minefield(Environment):
         self.mines = mines
         return self.observe(obs_space)
 
-    def _reset(self) -> Observation:
-        return self.reset(Minefield.obs_space())
+    def reset(self) -> Observation:
+        return self.reset_filter(Minefield.obs_space())
 
-    def act(self, action: Mapping[str, Action], obs_filter: ObsSpace) -> Observation:
+    def act_filter(
+        self, action: Mapping[str, Action], obs_filter: ObsSpace
+    ) -> Observation:
         for action_name, a in action.items():
             assert isinstance(a, CategoricalAction)
             if action_name == "move":
-                move = a.actions[0][1]
+                move = a.actions[0]
                 if move == 0:
                     self.vehicle.direction -= np.pi / 8
                 elif move == 1:
@@ -119,8 +121,8 @@ class Minefield(Environment):
 
         return self.observe(obs_filter)
 
-    def _act(self, action: Mapping[str, Action]) -> Observation:
-        return self.act(
+    def act(self, action: Mapping[str, Action]) -> Observation:
+        return self.act_filter(
             action,
             Minefield.obs_space(),
         )
@@ -154,7 +156,7 @@ class Minefield(Environment):
         else:
             ox = oy = 0
         return Observation(
-            entities=extract_features(
+            features=extract_features(
                 {
                     "Mine": [Mine(m.x_pos - ox, m.y_pos - oy) for m in self.mines],
                     "Vehicle": [self.vehicle],
@@ -162,10 +164,10 @@ class Minefield(Environment):
                 },
                 obs_filter,
             ),
-            action_masks={
-                "move": DenseCategoricalActionMask(actors=np.array([0]), mask=None),
+            actions={
+                "move": CategoricalActionMask(actor_types=["Vehicle"]),
             },
-            ids=list(range(len(self.mines) + 2)),
+            ids={"Vehicle": ["Vehicle"]},
             reward=reward,
             done=done,
             end_of_episode_info=EpisodeStats(self.step, reward) if done else None,

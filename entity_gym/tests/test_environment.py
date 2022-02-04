@@ -5,15 +5,13 @@ from entity_gym.environment.parallel_env_list import ParallelEnvList
 from entity_gym.environment import (
     SelectEntityActionSpace,
     CategoricalActionSpace,
-    DenseSelectEntityActionMask,
-    DenseCategoricalActionMask,
-    CategoricalActionMaskBatch,
-    SelectEntityActionMaskBatch,
-    SelectEntityAction,
-    CategoricalAction,
+    SelectEntityActionMask,
+    CategoricalActionMask,
+    VecCategoricalActionMask,
+    VecSelectEntityActionMask,
     Observation,
     ObsSpace,
-    ObsBatch,
+    VecObs,
     ActionSpace,
     Entity,
 )
@@ -33,14 +31,14 @@ def test_env_list() -> None:
     envs = EnvList(env_cls, {}, 100)
 
     obs_reset = envs.reset(obs_space)
-    assert len(obs_reset.ids) == 100
+    assert len(obs_reset.done) == 100
 
-    actions = [
-        {"Pick Cherry": SelectEntityAction(actions=[("Player", "Cherry 1")])}
-    ] * 100
+    actions = {
+        "Pick Cherry": RaggedBufferI64.from_array(np.zeros((100, 1, 1), np.int64))
+    }
     obs_act = envs.act(actions, obs_space)
 
-    assert len(obs_act.ids) == 100
+    assert len(obs_act.done) == 100
 
 
 def test_parallel_env_list() -> None:
@@ -52,20 +50,22 @@ def test_parallel_env_list() -> None:
     envs = ParallelEnvList(env_cls, {}, 100, 10)
 
     obs_reset = envs.reset(obs_space)
-    assert len(obs_reset.ids) == 100
+    assert len(obs_reset.done) == 100
 
-    actions = [
-        {"Pick Cherry": SelectEntityAction(actions=[("Player", "Cherry 1")])}
-    ] * 100
+    actions = {
+        "Pick Cherry": RaggedBufferI64.from_array(np.zeros((100, 1, 1), np.int64))
+    }
     obs_act = envs.act(actions, obs_space)
-    assert len(obs_act.ids) == 100
+    assert len(obs_act.done) == 100
 
     envs = ParallelEnvList(Xor, {}, 100, 10)
     obs_reset = envs.reset(Xor.obs_space())
-    assert len(obs_reset.ids) == 100
-    actions_xor = [{"output": CategoricalAction(actions=[(0, 0)])}] * 100
+    assert len(obs_reset.done) == 100
+    actions_xor = {
+        "output": RaggedBufferI64.from_array(np.zeros((100, 1, 1), np.int64))
+    }
     obs_act = envs.act(actions_xor, Xor.obs_space())
-    assert len(obs_act.ids) == 100
+    assert len(obs_act.done) == 100
     assert len(obs_act.end_of_episode_info) == 100
 
 
@@ -85,34 +85,31 @@ def test_batch_obs_entities() -> None:
     action_space: Dict[str, ActionSpace] = {}
 
     observation1 = Observation(
-        {"entity1": np.array([[10, 10, 10], [10, 10, 10]], np.float32)},
-        ["entity1_0", "entity1_1"],
-        {},
-        0.0,
-        False,
-        None,
+        features={"entity1": np.array([[10, 10, 10], [10, 10, 10]], np.float32)},
+        ids={"entity1": ["entity1_0", "entity1_1"]},
+        actions={},
+        reward=0.0,
+        done=False,
     )
 
     observation2 = Observation(
-        {"entity1": np.array([[10, 10, 10]], np.float32)},
-        ["entity1_0"],
-        {},
-        0.0,
-        False,
-        None,
+        features={"entity1": np.array([[10, 10, 10]], np.float32)},
+        ids={"entity1": ["entity1_0"]},
+        actions={},
+        reward=0.0,
+        done=False,
     )
 
     observation3 = Observation(
-        {
+        features={
             "rare": np.array(
                 [[10, 10, 10, 4, 2], [10, 10, 10, 4, 2], [10, 10, 10, 4, 2]], np.float32
             )
         },
-        ["rare1_0", "rare1_1", "rare1_2"],
-        {},
-        0.0,
-        False,
-        None,
+        ids={"rare": ["rare1_0", "rare1_1", "rare1_2"]},
+        actions={},
+        reward=0.0,
+        done=False,
     )
 
     obs_batch = batch_obs(
@@ -121,8 +118,8 @@ def test_batch_obs_entities() -> None:
 
     # entity1 observations should have a ragged array with lengths [2, 1, 0]
     # rare observations should have a ragged array with lengths [0, 0, 3]
-    assert np.all(obs_batch.entities["entity1"].size1() == np.array([2, 1, 0]))
-    assert np.all(obs_batch.entities["rare"].size1() == np.array([0, 0, 3]))
+    assert np.all(obs_batch.features["entity1"].size1() == np.array([2, 1, 0]))
+    assert np.all(obs_batch.features["rare"].size1() == np.array([0, 0, 3]))
 
 
 def test_batch_obs_select_entity_action() -> None:
@@ -147,68 +144,76 @@ def test_batch_obs_select_entity_action() -> None:
     }
 
     observation1 = Observation(
-        {
+        features={
             "entity1": np.array([[10, 10, 10]], np.float32),
             "entity2": np.array([[10, 10, 10]], np.float32),
         },
-        ["entity1_0", "entity2_0"],
-        {
+        ids={"entity1": ["entity1_0"], "entity2": ["entity2_0"]},
+        actions={
             # entity1 can low five entity 2 and vice versa
-            "low_five": DenseSelectEntityActionMask(
-                np.array([0, 1]), np.array([1, 0]), None
+            "low_five": SelectEntityActionMask(
+                actor_ids=["entity1_0", "entity2_0"],
+                actee_ids=["entity2_0", "entity1_0"],
             )
         },
-        0.0,
-        False,
-        None,
+        reward=0.0,
+        done=False,
     )
 
     observation2 = Observation(
-        {
+        features={
             "entity1": np.array([[10, 10, 10]], np.float32),
             "entity3": np.array([[10, 10, 10]], np.float32),
         },
-        ["entity1_0", "entity3_0"],
-        {
+        ids={"entity1": ["entity1_0"], "entity3": ["entity3_0"]},
+        actions={
             # entity3 can high five entity 1
-            "high_five": DenseSelectEntityActionMask(np.array([1]), np.array([0]), None)
+            "high_five": SelectEntityActionMask(
+                actor_ids=["entity3_0"],
+                actee_ids=["entity1_0"],
+            )
         },
-        0.0,
-        False,
-        None,
+        reward=0.0,
+        done=False,
     )
 
     observation3 = Observation(
-        {
+        features={
             "entity1": np.array([[10, 10, 10]], np.float32),
             "entity2": np.array([[10, 10, 10], [10, 10, 10]], np.float32),
             "entity3": np.array([[10, 10, 10]], np.float32),
         },
-        ["entity1_0", "entity2_0", "entity2_1", "entity3_0"],
-        {
+        ids={
+            "entity1": ["entity1_0"],
+            "entity2": ["entity2_1", "entity2_0"],
+            "entity3": ["entity3_0"],
+        },
+        actions={
             # entity3 can high five entity 1, and entity 2_0 and entity 2_1 can mid five entity3. entity1 and entity2 can low five each other
-            "high_five": DenseSelectEntityActionMask(
-                np.array([3]), np.array([0]), None
+            "high_five": SelectEntityActionMask(
+                actor_ids=["entity3_0"],
+                actee_ids=["entity1_0"],
             ),
-            "mid_five": DenseSelectEntityActionMask(
-                np.array([1, 2]), np.array([3]), None
+            "mid_five": SelectEntityActionMask(
+                actor_ids=["entity2_1", "entity2_0"],
+                actee_ids=["entity3_0"],
             ),
-            "low_five": DenseSelectEntityActionMask(
-                np.array([0, 1, 2]), np.array([0, 1, 2]), None
+            "low_five": SelectEntityActionMask(
+                actor_ids=["entity1_0", "entity2_1", "entity2_0"],
+                actee_ids=["entity2_1", "entity1_0", "entity2_0"],
             ),
         },
-        0.0,
-        False,
-        None,
+        reward=0.0,
+        done=False,
     )
 
     obs_batch = batch_obs(
         [observation1, observation2, observation3], obs_space, action_space
     )
 
-    assert isinstance(obs_batch.action_masks["high_five"], SelectEntityActionMaskBatch)
-    assert isinstance(obs_batch.action_masks["mid_five"], SelectEntityActionMaskBatch)
-    assert isinstance(obs_batch.action_masks["low_five"], SelectEntityActionMaskBatch)
+    assert isinstance(obs_batch.action_masks["high_five"], VecSelectEntityActionMask)
+    assert isinstance(obs_batch.action_masks["mid_five"], VecSelectEntityActionMask)
+    assert isinstance(obs_batch.action_masks["low_five"], VecSelectEntityActionMask)
 
     assert np.all(
         obs_batch.action_masks["high_five"].actors.size1() == np.array([0, 1, 1])
@@ -252,34 +257,39 @@ def test_batch_obs_categorical_action() -> None:
     }
 
     observation1 = Observation(
-        {
+        features={
             "entity1": np.array([[10, 10, 10]], np.float32),
             "entity2": np.array([[10, 10, 10]], np.float32),
         },
-        ["entity1_0", "entity2_0"],
-        {
+        ids={
+            "entity1": ["entity1_0"],
+            "entity2": ["entity2_0"],
+        },
+        actions={
             # both entity1 and entity2 can move all directions
-            "move": DenseCategoricalActionMask(
-                np.array([0, 1]),
-                np.array([[True, True, True, True], [True, True, True, True]]),
+            "move": CategoricalActionMask(
+                actor_ids=["entity1_0", "entity2_0"],
+                mask=np.array([[True, True, True, True], [True, True, True, True]]),
             ),
         },
-        0.0,
-        False,
-        None,
+        reward=0.0,
+        done=False,
     )
 
     observation2 = Observation(
-        {
+        features={
             "entity1": np.array([[10, 10, 10]], np.float32),
             "entity3": np.array([[10, 10, 10], [10, 10, 10]], np.float32),
         },
-        ["entity1_0", "entity3_0", "entity3_1"],
-        {
+        ids={
+            "entity1": ["entity1_0"],
+            "entity3": ["entity3_0", "entity3_1"],
+        },
+        actions={
             # all entities can move. Entity 3_1 can also choose items
-            "move": DenseCategoricalActionMask(
-                np.array([0, 1, 2]),
-                np.array(
+            "move": CategoricalActionMask(
+                actor_ids=["entity3_0", "entity1_0", "entity3_1"],
+                mask=np.array(
                     [
                         [True, True, True, True],
                         [True, True, True, True],
@@ -287,51 +297,57 @@ def test_batch_obs_categorical_action() -> None:
                     ]
                 ),
             ),
-            "choose_inventory_item": DenseCategoricalActionMask(
-                np.array([2]), np.array([[True, True, True]])
+            "choose_inventory_item": CategoricalActionMask(
+                ["entity3_1"], mask=np.array([[True, True, True]])
             ),
         },
-        0.0,
-        False,
-        None,
+        reward=0.0,
+        done=False,
     )
 
     observation3 = Observation(
-        {
+        features={
             "entity1": np.array([[10, 10, 10], [10, 10, 10]], np.float32),
             "entity2": np.array([[10, 10, 10], [10, 10, 10]], np.float32),
             "entity3": np.array([[10, 10, 10], [10, 10, 10]], np.float32),
         },
-        ["entity1_0", "entity1_1", "entity2_0", "entity2_1", "entity3_0", "entity3_1"],
-        {
+        ids={
+            "entity1": ["entity1_0", "entity1_1"],
+            "entity2": ["entity2_0", "entity2_1"],
+            "entity3": ["entity3_1", "entity3_0"],
+        },
+        actions={
             # no entities can move or do anything
         },
-        0.0,
-        False,
-        None,
+        reward=0.0,
+        done=False,
     )
 
     obs_batch = batch_obs(
         [observation1, observation2, observation3], obs_space, action_space
     )
 
-    assert isinstance(obs_batch.action_masks["move"], CategoricalActionMaskBatch)
+    assert isinstance(obs_batch.action_masks["move"], VecCategoricalActionMask)
     assert isinstance(
-        obs_batch.action_masks["choose_inventory_item"], CategoricalActionMaskBatch
+        obs_batch.action_masks["choose_inventory_item"], VecCategoricalActionMask
     )
 
-    assert obs_batch.action_masks["move"].masks is not None
-    assert obs_batch.action_masks["choose_inventory_item"].masks is not None
+    assert obs_batch.action_masks["move"].mask is not None
+    assert obs_batch.action_masks["choose_inventory_item"].mask is not None
 
-    assert np.all(obs_batch.action_masks["move"].actors.size1() == np.array([2, 3, 0]))
-    assert np.all(obs_batch.action_masks["move"].masks.size1() == np.array([2, 3, 0]))
+    assert np.array_equal(
+        obs_batch.action_masks["move"].actors.size1(), np.array([2, 3, 0])
+    )
+    assert np.array_equal(
+        obs_batch.action_masks["move"].mask.size1(), np.array([2, 3, 0])
+    )
 
     assert np.all(
         obs_batch.action_masks["choose_inventory_item"].actors.size1()
         == np.array([0, 1, 0])
     )
     assert np.all(
-        obs_batch.action_masks["choose_inventory_item"].masks.size1()
+        obs_batch.action_masks["choose_inventory_item"].mask.size1()
         == np.array([0, 1, 0])
     )
 
@@ -345,8 +361,8 @@ def test_merge_obs_entities() -> None:
     the output batch should have 20 of EACH entity 1 and entity2, but with zero length rows padded appropriately
     """
 
-    obs_batch1 = ObsBatch(
-        entities={
+    obs_batch1 = VecObs(
+        features={
             "entity1": RaggedBufferF32.from_flattened(
                 flattened=np.array([[10, 10, 10]] * 10, np.float32),
                 lengths=np.array([0, 0, 1, 1, 0, 2, 3, 3, 0, 0]),
@@ -356,15 +372,14 @@ def test_merge_obs_entities() -> None:
                 lengths=np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
             ),
         },
-        ids=[["entity1_0"] * 10],
         action_masks={},
         reward=np.array([0] * 10, np.float32),
         done=np.array([False] * 10, np.bool_),
         end_of_episode_info={},
     )
 
-    obs_batch2 = ObsBatch(
-        entities={
+    obs_batch2 = VecObs(
+        features={
             "entity1": RaggedBufferF32.from_flattened(
                 flattened=np.array([], np.float32).reshape(0, 3),
                 lengths=np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
@@ -374,21 +389,20 @@ def test_merge_obs_entities() -> None:
                 lengths=np.array([0, 0, 1, 1, 0, 2, 3, 3, 0, 0]),
             ),
         },
-        ids=[["entity2_0"] * 10],
         action_masks={},
         reward=np.array([0] * 10, np.float32),
         done=np.array([False] * 10, np.bool_),
         end_of_episode_info={},
     )
 
-    ObsBatch.merge_obs(obs_batch1, obs_batch2)
+    VecObs.extend(obs_batch1, obs_batch2)
 
     assert np.all(
-        obs_batch1.entities["entity1"].size1()
+        obs_batch1.features["entity1"].size1()
         == [0, 0, 1, 1, 0, 2, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     )
     assert np.all(
-        obs_batch1.entities["entity2"].size1()
+        obs_batch1.features["entity2"].size1()
         == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 2, 3, 3, 0, 0]
     )
 
@@ -406,8 +420,8 @@ def test_merge_obs_actions_categorical() -> None:
     Overall batch1 and batch 2 should contain 6 observations for both action1 and action2 (with 0-length rows where appropriate)
     """
 
-    obs_batch1 = ObsBatch(
-        entities={
+    obs_batch1 = VecObs(
+        features={
             "entity1": RaggedBufferF32.from_flattened(
                 flattened=np.array([[10, 10, 10]] * 3, np.float32),
                 lengths=np.array([1, 1, 1]),
@@ -417,16 +431,8 @@ def test_merge_obs_actions_categorical() -> None:
                 lengths=np.array([1, 1, 1]),
             ),
         },
-        ids=[
-            "entity1_0",
-            "entity1_1",
-            "entity1_2",
-            "entity2_0",
-            "entity2_1",
-            "entity2_2",
-        ],
         action_masks={
-            "action1": CategoricalActionMaskBatch(
+            "action1": VecCategoricalActionMask(
                 RaggedBufferI64.from_flattened(
                     flattened=np.array([[0], [1], [2], [3]], int),
                     lengths=np.array([1, 2, 1]),
@@ -444,7 +450,7 @@ def test_merge_obs_actions_categorical() -> None:
                     lengths=np.array([1, 2, 1]),
                 ),
             ),
-            "action2": CategoricalActionMaskBatch(
+            "action2": VecCategoricalActionMask(
                 RaggedBufferI64.from_flattened(
                     flattened=np.array([], int).reshape(0, 1),
                     lengths=np.array([0, 0, 0]),
@@ -460,8 +466,8 @@ def test_merge_obs_actions_categorical() -> None:
         end_of_episode_info={},
     )
 
-    obs_batch2 = ObsBatch(
-        entities={
+    obs_batch2 = VecObs(
+        features={
             "entity1": RaggedBufferF32.from_flattened(
                 flattened=np.array([[10, 10, 10]] * 3, np.float32),
                 lengths=np.array([1, 1, 1]),
@@ -471,9 +477,8 @@ def test_merge_obs_actions_categorical() -> None:
                 lengths=np.array([1, 1, 1]),
             ),
         },
-        ids=["entity1_0", "entity2_0"],
         action_masks={
-            "action2": CategoricalActionMaskBatch(
+            "action2": VecCategoricalActionMask(
                 RaggedBufferI64.from_flattened(
                     flattened=np.array([[0], [0], [1], [0]], int),
                     lengths=np.array([1, 2, 1]),
@@ -491,7 +496,7 @@ def test_merge_obs_actions_categorical() -> None:
                     lengths=np.array([1, 2, 1]),
                 ),
             ),
-            "action1": CategoricalActionMaskBatch(
+            "action1": VecCategoricalActionMask(
                 RaggedBufferI64.from_flattened(
                     flattened=np.array([], int).reshape(0, 1),
                     lengths=np.array([0, 0, 0]),
@@ -507,10 +512,10 @@ def test_merge_obs_actions_categorical() -> None:
         end_of_episode_info={},
     )
 
-    ObsBatch.merge_obs(obs_batch1, obs_batch2)
+    VecObs.extend(obs_batch1, obs_batch2)
 
-    assert isinstance(obs_batch1.action_masks["action1"], CategoricalActionMaskBatch)
-    assert isinstance(obs_batch1.action_masks["action2"], CategoricalActionMaskBatch)
+    assert isinstance(obs_batch1.action_masks["action1"], VecCategoricalActionMask)
+    assert isinstance(obs_batch1.action_masks["action2"], VecCategoricalActionMask)
 
     assert np.all(
         obs_batch1.action_masks["action1"].actors.size1() == [1, 2, 1, 0, 0, 0]
@@ -532,8 +537,8 @@ def test_merge_obs_actions_select_entity() -> None:
     action2 is padded to 0-length rows in the first batch and action1 is padded with 0-length rows in the second batch.
     Overall batch1 and batch 2 should contain 6 observations for both action1 and action2 (with 0-length rows where appropriate)
     """
-    obs_batch1 = ObsBatch(
-        entities={
+    obs_batch1 = VecObs(
+        features={
             "entity1": RaggedBufferF32.from_flattened(
                 flattened=np.array([[10, 10, 10]] * 3, np.float32),
                 lengths=np.array([1, 1, 1]),
@@ -543,16 +548,8 @@ def test_merge_obs_actions_select_entity() -> None:
                 lengths=np.array([1, 1, 1]),
             ),
         },
-        ids=[
-            "entity1_0",
-            "entity1_1",
-            "entity1_2",
-            "entity2_0",
-            "entity2_1",
-            "entity2_2",
-        ],
         action_masks={
-            "action1": SelectEntityActionMaskBatch(
+            "action1": VecSelectEntityActionMask(
                 RaggedBufferI64.from_flattened(
                     flattened=np.array([[0], [0], [1], [2]], int),
                     lengths=np.array([1, 2, 1]),
@@ -562,7 +559,7 @@ def test_merge_obs_actions_select_entity() -> None:
                     lengths=np.array([2, 1, 2]),
                 ),
             ),
-            "action2": SelectEntityActionMaskBatch(
+            "action2": VecSelectEntityActionMask(
                 RaggedBufferI64.from_flattened(
                     flattened=np.array([], int).reshape(0, 1),
                     lengths=np.array([0, 0, 0]),
@@ -578,8 +575,8 @@ def test_merge_obs_actions_select_entity() -> None:
         end_of_episode_info={},
     )
 
-    obs_batch2 = ObsBatch(
-        entities={
+    obs_batch2 = VecObs(
+        features={
             "entity1": RaggedBufferF32.from_flattened(
                 flattened=np.array([[10, 10, 10]] * 3, np.float32),
                 lengths=np.array([1, 1, 1]),
@@ -589,16 +586,8 @@ def test_merge_obs_actions_select_entity() -> None:
                 lengths=np.array([1, 1, 1]),
             ),
         },
-        ids=[
-            "entity1_0",
-            "entity1_1",
-            "entity1_2",
-            "entity2_0",
-            "entity2_1",
-            "entity2_2",
-        ],
         action_masks={
-            "action1": SelectEntityActionMaskBatch(
+            "action1": VecSelectEntityActionMask(
                 RaggedBufferI64.from_flattened(
                     flattened=np.array([], int).reshape(0, 1),
                     lengths=np.array([0, 0, 0]),
@@ -608,7 +597,7 @@ def test_merge_obs_actions_select_entity() -> None:
                     lengths=np.array([0, 0, 0]),
                 ),
             ),
-            "action2": SelectEntityActionMaskBatch(
+            "action2": VecSelectEntityActionMask(
                 RaggedBufferI64.from_flattened(
                     flattened=np.array([[0], [0], [1], [2]], int),
                     lengths=np.array([1, 2, 1]),
@@ -624,10 +613,10 @@ def test_merge_obs_actions_select_entity() -> None:
         end_of_episode_info={},
     )
 
-    ObsBatch.merge_obs(obs_batch1, obs_batch2)
+    obs_batch1.extend(obs_batch2)
 
-    assert isinstance(obs_batch1.action_masks["action1"], SelectEntityActionMaskBatch)
-    assert isinstance(obs_batch1.action_masks["action2"], SelectEntityActionMaskBatch)
+    assert isinstance(obs_batch1.action_masks["action1"], VecSelectEntityActionMask)
+    assert isinstance(obs_batch1.action_masks["action2"], VecSelectEntityActionMask)
 
     assert np.all(
         obs_batch1.action_masks["action1"].actors.size1() == [1, 2, 1, 0, 0, 0]

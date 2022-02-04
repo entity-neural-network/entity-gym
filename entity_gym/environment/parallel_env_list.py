@@ -25,12 +25,13 @@ from entity_gym.serialization.msgpack_ragged import (
     ragged_buffer_decode,
 )
 from entity_gym.environment.vec_env import (
-    ObsBatch,
+    VecObs,
     VecEnv,
     batch_obs,
 )
 from entity_gym.environment.env_list import EnvList
 import msgpack_numpy
+from ragged_buffer import RaggedBufferI64
 
 
 class CloudpickleWrapper:
@@ -162,7 +163,7 @@ class ParallelEnvList(VecEnv):
     def env_cls(cls) -> Type[Environment]:
         return cls.cls
 
-    def reset(self, obs_space: ObsSpace) -> ObsBatch:
+    def reset(self, obs_space: ObsSpace) -> VecObs:
         for remote in self.remotes:
             remote.send(("reset", obs_space))
 
@@ -171,9 +172,9 @@ class ParallelEnvList(VecEnv):
 
         for remote in self.remotes:
             remote_obs_batch = remote.recv()
-            observations.merge_obs(remote_obs_batch)
+            observations.extend(remote_obs_batch)
 
-        assert isinstance(observations, ObsBatch)
+        assert isinstance(observations, VecObs)
         return observations
 
     def render(self, **kwargs: Any) -> npt.NDArray[np.uint8]:
@@ -193,14 +194,17 @@ class ParallelEnvList(VecEnv):
             process.join()
 
     def _chunk_actions(
-        self, actions: Sequence[Mapping[str, Action]]
-    ) -> Generator[Sequence[Mapping[str, Action]], List[Observation], None]:
-        for i in range(0, len(actions), self.envs_per_process):
-            yield actions[i : i + self.envs_per_process]
+        self, actions: Mapping[str, RaggedBufferI64]
+    ) -> Generator[Mapping[str, RaggedBufferI64], List[Observation], None]:
+        for i in range(0, self.num_envs, self.envs_per_process):
+            yield {
+                atype: a[i : i + self.envs_per_process, :, :]
+                for atype, a in actions.items()
+            }
 
     def act(
-        self, actions: Sequence[Mapping[str, Action]], obs_space: ObsSpace
-    ) -> ObsBatch:
+        self, actions: Mapping[str, RaggedBufferI64], obs_space: ObsSpace
+    ) -> VecObs:
         remote_actions = self._chunk_actions(actions)
         for remote, action in zip(self.remotes, remote_actions):
             remote.send(("act", (action, obs_space)))
@@ -210,7 +214,7 @@ class ParallelEnvList(VecEnv):
 
         for remote in self.remotes:
             remote_obs_batch = remote.recv()
-            observations.merge_obs(remote_obs_batch)
+            observations.extend(remote_obs_batch)
         return observations
 
     def __len__(self) -> int:

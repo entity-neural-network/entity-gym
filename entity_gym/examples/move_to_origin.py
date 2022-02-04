@@ -5,7 +5,7 @@ from typing import Dict, Mapping
 
 from entity_gym.environment import (
     CategoricalAction,
-    DenseCategoricalActionMask,
+    CategoricalActionMask,
     Entity,
     Environment,
     CategoricalActionSpace,
@@ -59,7 +59,7 @@ class MoveToOrigin(Environment):
             ),
         }
 
-    def _reset(self) -> Observation:
+    def reset(self) -> Observation:
         angle = random.uniform(0, 2 * np.pi)
         self.x_pos = np.cos(angle)
         self.y_pos = np.sin(angle)
@@ -70,13 +70,13 @@ class MoveToOrigin(Environment):
         self.step = 0
         return self.observe()
 
-    def _act(self, action: Mapping[str, Action]) -> Observation:
+    def act(self, action: Mapping[str, Action]) -> Observation:
         self.step += 1
 
         for action_name, a in action.items():
             assert isinstance(a, CategoricalAction), f"{a} is not a CategoricalAction"
             if action_name == "horizontal_thruster":
-                for actor_id, choice_id in a.actions:
+                for choice_id in a.actions:
                     if choice_id == 0:
                         self.x_velocity += 0.01
                     elif choice_id == 1:
@@ -90,7 +90,7 @@ class MoveToOrigin(Environment):
                     else:
                         raise ValueError(f"Invalid choice id {choice_id}")
             elif action_name == "vertical_thruster":
-                for actor_id, choice_id in a.actions:
+                for choice_id in a.actions:
                     if choice_id == 0:
                         self.y_velocity += 0.01
                     elif choice_id == 1:
@@ -117,7 +117,10 @@ class MoveToOrigin(Environment):
 
     def observe(self, done: bool = False) -> Observation:
         return Observation(
-            entities={
+            ids={
+                "Spaceship": [0],
+            },
+            features={
                 "Spaceship": np.array(
                     [
                         [
@@ -131,15 +134,10 @@ class MoveToOrigin(Environment):
                     dtype=np.float32,
                 ),
             },
-            action_masks={
-                "horizontal_thruster": DenseCategoricalActionMask(
-                    actors=np.array([0]), mask=None
-                ),
-                "vertical_thruster": DenseCategoricalActionMask(
-                    actors=np.array([0]), mask=None
-                ),
+            actions={
+                "horizontal_thruster": CategoricalActionMask(),
+                "vertical_thruster": CategoricalActionMask(),
             },
-            ids=[0],
             reward=(self.last_x_pos ** 2 + self.last_y_pos ** 2) ** 0.5
             - (self.x_pos ** 2 + self.y_pos ** 2) ** 0.5,
             done=done,

@@ -1,14 +1,14 @@
 import numpy as np
 import tempfile
 from entity_gym.serialization import Sample, SampleRecorder, Trace
-from entity_gym.environment import CategoricalActionMaskBatch, ObsBatch
+from entity_gym.environment import VecCategoricalActionMask, VecObs
 from ragged_buffer import RaggedBufferF32, RaggedBufferI64
 
 
 def test_serde_sample() -> None:
     sample = Sample(
-        obs=ObsBatch(
-            entities={
+        obs=VecObs(
+            features={
                 "hero": RaggedBufferF32.from_array(
                     np.array([[[1.0, 2.0, 0.3, 100.0, 10.0]]], dtype=np.float32),
                 ),
@@ -38,19 +38,18 @@ def test_serde_sample() -> None:
                 ),
             },
             action_masks={
-                "move": CategoricalActionMaskBatch(
-                    actors=RaggedBufferI64.from_array(np.array([[[0]]])), masks=None
+                "move": VecCategoricalActionMask(
+                    actors=RaggedBufferI64.from_array(np.array([[[0]]])), mask=None
                 ),
-                "shoot": CategoricalActionMaskBatch(
-                    actors=RaggedBufferI64.from_array(np.array([[[0]]])), masks=None
+                "shoot": VecCategoricalActionMask(
+                    actors=RaggedBufferI64.from_array(np.array([[[0]]])), mask=None
                 ),
-                "explode": CategoricalActionMaskBatch(
+                "explode": VecCategoricalActionMask(
                     actors=RaggedBufferI64.from_array(np.array([[[4], [5], [6]]])),
-                    masks=None,
+                    mask=None,
                 ),
             },
             reward=np.array([0.3124125987123489]),
-            ids=[[0, 1, 2, 3, 4, 5, 6]],
             done=np.array([False]),
             end_of_episode_info={},
         ),
@@ -68,7 +67,7 @@ def test_serde_sample() -> None:
             ),
         },
         logits=None,
-        actions=[],
+        actions={},
         step=[13],
         episode=[4213],
     )
@@ -78,7 +77,7 @@ def test_serde_sample() -> None:
         sample_recorder.record(sample)
         # modify the sample
         sample.obs.reward = np.array([1.0])
-        sample.obs.entities["hero"] = RaggedBufferF32.from_array(
+        sample.obs.features["hero"] = RaggedBufferF32.from_array(
             np.array([[[1.0, 2.0, 0.3, 200.0, 10.0]]], dtype=np.float32),
         )
         sample_recorder.record(sample)
@@ -90,10 +89,10 @@ def test_serde_sample() -> None:
             assert trace.samples[0].obs.reward[0] == 0.3124125987123489
             assert trace.samples[1].obs.reward[0] == 1.0
             np.testing.assert_equal(
-                trace.samples[0].obs.entities["hero"][0].as_array(),
+                trace.samples[0].obs.features["hero"][0].as_array(),
                 np.array([[1.0, 2.0, 0.3, 100.0, 10.0]], dtype=np.float32),
             )
             np.testing.assert_equal(
-                trace.samples[1].obs.entities["hero"][0].as_array(),
+                trace.samples[1].obs.features["hero"][0].as_array(),
                 np.array([[1.0, 2.0, 0.3, 200.0, 10.0]], dtype=np.float32),
             )

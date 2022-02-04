@@ -6,23 +6,21 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Sequence,
     Type,
     Union,
     overload,
 )
 from entity_gym.environment.environment import (
-    Action,
     ActionSpace,
     CategoricalActionSpace,
-    DenseSelectEntityActionMask,
-    EntityID,
+    CategoricalActionMask,
     Environment,
     EpisodeStats,
-    DenseCategoricalActionMask,
     ObsSpace,
     Observation,
     SelectEntityActionSpace,
+    EntityType,
+    ActionType,
 )
 import numpy as np
 import numpy.typing as npt
@@ -30,70 +28,30 @@ from ragged_buffer import RaggedBufferF32, RaggedBufferI64, RaggedBufferBool
 
 
 @dataclass
-class CategoricalActionMaskBatch:
-    actors: RaggedBufferI64
-    masks: Optional[RaggedBufferBool]
-
-    def push(self, mask: Any) -> None:
-        assert isinstance(mask, DenseCategoricalActionMask)
-        self.actors.push(mask.actors.reshape(-1, 1))
-        if self.masks is not None and mask.mask is not None:
-            self.masks.push(mask.mask.reshape(-1, self.masks.size2()))
-
-    def __getitem__(
-        self, i: Union[int, npt.NDArray[np.int64]]
-    ) -> "CategoricalActionMaskBatch":
-        if self.masks is not None and self.masks.size0() > 0:
-            return CategoricalActionMaskBatch(self.actors[i], self.masks[i])
-        else:
-            return CategoricalActionMaskBatch(self.actors[i], None)
-
-    def extend(self, other: Any) -> None:
-        assert isinstance(
-            other, CategoricalActionMaskBatch
-        ), f"Expected CategoricalActionMaskBatch, got {type(other)}"
-        self.actors.extend(other.actors)
-        if self.masks is not None and other.masks is not None:
-            self.masks.extend(other.masks)
-
-    def clear(self) -> None:
-        self.actors.clear()
-        if self.masks is not None:
-            self.masks.clear()
-
-
-@dataclass
-class SelectEntityActionMaskBatch:
+class VecSelectEntityActionMask:
     actors: RaggedBufferI64
     actees: RaggedBufferI64
-
-    def push(self, mask: Any) -> None:
-        assert isinstance(
-            mask, DenseSelectEntityActionMask
-        ), f"Expected DenseSelectEntityActionMask, got {type(mask)}"
-        self.actors.push(mask.actors.reshape(-1, 1))
-        self.actees.push(mask.actees.reshape(-1, 1))
 
     @overload
     def __getitem__(self, i: int) -> RaggedBufferI64:
         ...
 
     @overload
-    def __getitem__(self, i: npt.NDArray[np.int64]) -> "SelectEntityActionMaskBatch":
+    def __getitem__(self, i: npt.NDArray[np.int64]) -> "VecSelectEntityActionMask":
         ...
 
     def __getitem__(
         self, i: Union[int, npt.NDArray[np.int64]]
-    ) -> Union["SelectEntityActionMaskBatch", RaggedBufferI64]:
+    ) -> Union["VecSelectEntityActionMask", RaggedBufferI64]:
         if isinstance(i, int):
             return self.actors[i]
         else:
-            return SelectEntityActionMaskBatch(self.actors[i], self.actees[i])
+            return VecSelectEntityActionMask(self.actors[i], self.actees[i])
 
     def extend(self, other: Any) -> None:
         assert isinstance(
-            other, SelectEntityActionMaskBatch
-        ), f"Expected SelectEntityActionMaskBatch, got {type(other)}"
+            other, VecSelectEntityActionMask
+        ), f"Expected VecSelectEntityActionMask, got {type(other)}"
         self.actors.extend(other.actors)
         self.actees.extend(other.actees)
 
@@ -102,40 +60,67 @@ class SelectEntityActionMaskBatch:
         self.actees.clear()
 
 
-ActionMaskBatch = Union[CategoricalActionMaskBatch, SelectEntityActionMaskBatch]
+@dataclass
+class VecCategoricalActionMask:
+    actors: RaggedBufferI64
+    mask: Optional[RaggedBufferBool]
+
+    def __getitem__(
+        self, i: Union[int, npt.NDArray[np.int64]]
+    ) -> "VecCategoricalActionMask":
+        if self.mask is not None and self.mask.size0() > 0:
+            return VecCategoricalActionMask(self.actors[i], self.mask[i])
+        else:
+            return VecCategoricalActionMask(self.actors[i], None)
+
+    def extend(self, other: Any) -> None:
+        assert isinstance(
+            other, VecCategoricalActionMask
+        ), f"Expected CategoricalActionMaskBatch, got {type(other)}"
+        self.actors.extend(other.actors)
+        if self.mask is not None and other.mask is not None:
+            self.mask.extend(other.mask)
+        elif self.mask is None and other.mask is None:
+            pass
+        else:
+            print(self.actors, self.mask, other.mask)
+            raise NotImplementedError()
+
+    def clear(self) -> None:
+        self.actors.clear()
+        if self.mask is not None:
+            self.mask.clear()
+
+
+VecActionMask = Union[VecCategoricalActionMask, VecSelectEntityActionMask]
 
 
 @dataclass
-class ObsBatch:
-    entities: Dict[str, RaggedBufferF32]
-    ids: List[Sequence[EntityID]]
-    action_masks: Dict[str, ActionMaskBatch]
+class VecObs:
+    features: Dict[EntityType, RaggedBufferF32]
+    action_masks: Dict[ActionType, VecActionMask]
     reward: npt.NDArray[np.float32]
     done: npt.NDArray[np.bool_]
     end_of_episode_info: Dict[int, EpisodeStats]
 
-    def merge_obs(self, b: "ObsBatch") -> None:
-        """
-        Merges ObsBatch b into this batch
-        """
-        envs = len(self.ids)
-
-        # merge entities
-        for k in b.entities.keys():
-            self.entities[k].extend(b.entities[k])
-
-        # merge ids
-        self.ids.extend(b.ids)
-
-        # merge masks
-        for k in b.action_masks.keys():
-            self.action_masks[k].extend(b.action_masks[k])
-
+    def extend(self, b: "VecObs") -> None:
+        num_envs = len(self.reward)
+        for etype, feats in b.features.items():
+            if etype not in self.features:
+                self.features[etype] = empty_ragged_f32(
+                    feats=feats.size2(), sequences=num_envs
+                )
+            self.features[etype].extend(feats)
+        for atype, amask in b.action_masks.items():
+            if atype not in self.action_masks:
+                raise NotImplementedError()
+            else:
+                self.action_masks[atype].extend(amask)
         self.reward = np.concatenate((self.reward, b.reward))
         self.done = np.concatenate((self.done, b.done))
-
+        num_envs = len(self.reward)
         for i, stats in b.end_of_episode_info.items():
-            self.end_of_episode_info[i + envs] = stats
+            self.end_of_episode_info[i + num_envs] = stats
 
 
 class VecEnv(ABC):
@@ -147,13 +132,13 @@ class VecEnv(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def reset(self, obs_config: ObsSpace) -> ObsBatch:
+    def reset(self, obs_config: ObsSpace) -> VecObs:
         raise NotImplementedError
 
     @abstractmethod
     def act(
-        self, actions: Sequence[Mapping[str, Action]], obs_filter: ObsSpace
-    ) -> ObsBatch:
+        self, actions: Mapping[ActionType, RaggedBufferI64], obs_filter: ObsSpace
+    ) -> VecObs:
         raise NotImplementedError
 
     @abstractmethod
@@ -170,13 +155,12 @@ class VecEnv(ABC):
 
 def batch_obs(
     obs: List[Observation], obs_space: ObsSpace, action_space: Dict[str, ActionSpace]
-) -> ObsBatch:
+) -> VecObs:
     """
     Converts a list of observations into a batch of observations.
     """
-    entities = {}
-    ids = []
-    action_masks: Dict[str, ActionMaskBatch] = {}
+    features: Dict[EntityType, RaggedBufferF32] = {}
+    action_masks: Dict[ActionType, VecActionMask] = {}
     reward = []
     done = []
     end_of_episode_info = {}
@@ -184,69 +168,118 @@ def batch_obs(
     # Initialize the entire batch with all entities and actions
     for entity_name, entity in obs_space.entities.items():
         feature_size = len(entity.features)
-        entities[entity_name] = RaggedBufferF32(feature_size)
+        features[entity_name] = RaggedBufferF32(feature_size)
 
     for action_name, space in action_space.items():
         if isinstance(space, CategoricalActionSpace):
-            mask_size = len(space.choices)
-            action_masks[action_name] = CategoricalActionMaskBatch(
-                RaggedBufferI64(1), RaggedBufferBool(mask_size)
+            action_masks[action_name] = VecCategoricalActionMask(
+                RaggedBufferI64(1),
+                None,
             )
         elif isinstance(space, SelectEntityActionSpace):
-            action_masks[action_name] = SelectEntityActionMaskBatch(
+            action_masks[action_name] = VecSelectEntityActionMask(
                 RaggedBufferI64(1), RaggedBufferI64(1)
             )
 
-    for o in obs:
-
-        # Append the IDs
-        ids.append(o.ids)
-
-        # Append the entities
-        for entity_name in obs_space.entities.keys():
-            if entity_name not in o.entities:
-                feature_size = len(obs_space.entities[entity_name].features)
-                entities[entity_name].push(np.array([], dtype=np.float32))
+    for i, o in enumerate(obs):
+        for entity_type, entity in obs_space.entities.items():
+            if entity_type not in features:
+                features[entity_type] = RaggedBufferF32.from_flattened(
+                    np.zeros((0, len(entity.features)), dtype=np.float32),
+                    lengths=np.zeros(i, dtype=np.int64),
+                )
+            if entity_type in o.features:
+                ofeats = o.features[entity_type]
+                if not isinstance(ofeats, np.ndarray):
+                    ofeats = np.array(ofeats, dtype=np.float32).reshape(
+                        len(ofeats), len(obs_space.entities[entity_type].features)
+                    )
+                features[entity_type].push(ofeats)
             else:
-                entities[entity_name].push(o.entities[entity_name])
+                features[entity_type].push(
+                    np.zeros((0, len(entity.features)), dtype=np.float32)
+                )
 
-        # Append the action masks
-        for action_name, space in action_space.items():
+        for atype, space in action_space.items():
+            if atype not in o.actions:
+                if atype in action_masks:
+                    if isinstance(space, CategoricalActionSpace):
+                        vec_action = action_masks[atype]
+                        assert isinstance(vec_action, VecCategoricalActionMask)
+                        vec_action.actors.push(np.zeros((0, 1), dtype=np.int64))
+                        if vec_action.mask is not None:
+                            vec_action.mask.push(
+                                np.zeros((0, len(space.choices)), dtype=np.bool_)
+                            )
+                    elif isinstance(space, SelectEntityActionSpace):
+                        vec_action = action_masks[atype]
+                        assert isinstance(vec_action, VecSelectEntityActionMask)
+                        vec_action.actors.push(np.zeros((0, 1), dtype=np.int64))
+                        vec_action.actees.push(np.zeros((0, 1), dtype=np.int64))
+                continue
+            action = o.actions[atype]
+            if atype not in action_masks:
+                if isinstance(space, CategoricalActionSpace):
+                    action_masks[atype] = VecCategoricalActionMask(
+                        empty_ragged_i64(1, i), None
+                    )
+                elif isinstance(space, SelectEntityActionSpace):
+                    action_masks[atype] = VecSelectEntityActionMask(
+                        empty_ragged_i64(1, i), empty_ragged_i64(1, i)
+                    )
             if isinstance(space, CategoricalActionSpace):
-                if action_name not in o.action_masks:
-                    mask_size = len(space.choices)
-                    action_masks[action_name].push(
-                        DenseCategoricalActionMask(
-                            np.array([], dtype=int), np.array([], dtype=bool)
+                vec_action = action_masks[atype]
+                assert isinstance(vec_action, VecCategoricalActionMask)
+                vec_action.actors.push(
+                    o._actor_indices(atype, obs_space).reshape(-1, 1)
+                )
+                if action.mask is not None:
+                    if vec_action.mask is None:
+                        vec_action.mask = RaggedBufferBool.from_flattened(
+                            np.ones((0, len(space.choices)), dtype=np.bool_),
+                            np.zeros(i, dtype=np.int64),
                         )
-                    )
-                else:
-                    action_masks[action_name].push(o.action_masks[action_name])
+                    amask = action.mask
+                    if not isinstance(amask, np.ndarray):
+                        amask = np.array(amask, dtype=np.bool_)
+                    vec_action.mask.push(amask)
             elif isinstance(space, SelectEntityActionSpace):
-                if action_name not in o.action_masks:
-                    action_masks[action_name].push(
-                        DenseSelectEntityActionMask(
-                            np.array([], dtype=int), np.array([], dtype=int)
-                        )
+                vec_action = action_masks[atype]
+                assert isinstance(vec_action, VecSelectEntityActionMask)
+                actors = o._actor_indices(atype, obs_space).reshape(-1, 1)
+                vec_action.actors.push(actors)
+                if len(actors) > 0:
+                    vec_action.actees.push(
+                        o._actee_indices(atype, obs_space).reshape(-1, 1)
                     )
                 else:
-                    action_masks[action_name].push(o.action_masks[action_name])
+                    vec_action.actees.push(np.zeros((0, 1), dtype=np.int64))
+            else:
+                raise NotImplementedError()
 
-        # Append the rewards
         reward.append(o.reward)
-
-        # Append the dones
         done.append(o.done)
-
-        # Append the episode infos
         if o.end_of_episode_info:
-            end_of_episode_info[len(ids) - 1] = o.end_of_episode_info
+            end_of_episode_info[len(reward) - 1] = o.end_of_episode_info
 
-    return ObsBatch(
-        entities,
-        ids,
+    return VecObs(
+        features,
         action_masks,
-        np.array(reward),
-        np.array(done),
+        np.array(reward, dtype=np.float32),
+        np.array(done, dtype=np.bool_),
         end_of_episode_info,
+    )
+
+
+def empty_ragged_f32(feats: int, sequences: int) -> RaggedBufferF32:
+    return RaggedBufferF32.from_flattened(
+        np.zeros((0, feats), dtype=np.float32),
+        lengths=np.array([0] * sequences, dtype=np.int64),
+    )
+
+
+def empty_ragged_i64(feats: int, sequences: int) -> RaggedBufferI64:
+    return RaggedBufferI64.from_flattened(
+        np.zeros((0, feats), dtype=np.int64),
+        lengths=np.array([0] * sequences, dtype=np.int64),
     )

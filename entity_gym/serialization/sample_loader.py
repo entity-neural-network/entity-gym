@@ -65,7 +65,7 @@ class Trace:
                 if sample.obs.done[i] and prev_episodes is not None:
                     episodes[prev_episodes[i]].complete = True
 
-                for name, feats in sample.obs.entities.items():
+                for name, feats in sample.obs.features.items():
                     if name not in episodes[e].entities:
                         episodes[e].entities[name] = feats[i]
                     else:

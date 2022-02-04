@@ -1,12 +1,15 @@
 from dataclasses import dataclass
 from typing import Dict, List, Mapping, Sequence, Tuple, Type
 import random
+from entity_gym.environment.environment import ActionType
+from entity_gym.environment.vec_env import VecObs, batch_obs
 import numpy as np
 from copy import deepcopy
+from ragged_buffer import RaggedBufferI64
 
 from entity_gym.environment import (
     CategoricalAction,
-    DenseCategoricalActionMask,
+    CategoricalActionMask,
     Entity,
     Environment,
     EpisodeStats,
@@ -108,7 +111,7 @@ class MultiSnake(Environment):
             self.food.append(Food(color, (x, y)))
             break
 
-    def _reset(self) -> Observation:
+    def reset(self) -> Observation:
         self.snakes = []
         self.food = []
         self.game_over = False
@@ -121,14 +124,13 @@ class MultiSnake(Environment):
             self._spawn_food(i)
         return self._observe()
 
-    def _act(self, action: Mapping[str, Action]) -> Observation:
+    def act(self, action: Mapping[str, Action]) -> Observation:
         game_over = False
         self.step += 1
-        reward = 0.0
         move_action = action["move"]
         self.last_scores = deepcopy(self.scores)
         assert isinstance(move_action, CategoricalAction)
-        for id, move in move_action.actions:
+        for id, move in move_action.items():
             snake = self.snakes[id]
             x, y = snake.segments[-1]
             if move == 0:
@@ -179,7 +181,7 @@ class MultiSnake(Environment):
             return (color - color_offset) % self.num_snakes
 
         return Observation(
-            entities={
+            features={
                 "SnakeHead": np.array(
                     [
                         [
@@ -212,12 +214,12 @@ class MultiSnake(Environment):
                     dtype=np.float32,
                 ),
             },
-            ids=list(
-                range(sum([len(s.segments) for s in self.snakes]) + len(self.food))
-            ),
-            action_masks={
-                "move": DenseCategoricalActionMask(
-                    actors=np.arange(self.num_snakes, dtype=np.int64),
+            ids={
+                "SnakeHead": [0, 1],
+            },
+            actions={
+                "move": CategoricalActionMask(
+                    actor_types=["SnakeHead"],
                 ),
             },
             reward=self.scores[player] - self.last_scores[player],
@@ -228,57 +230,3 @@ class MultiSnake(Environment):
             if done
             else None,
         )
-
-
-class MultiplayerMultiSnake(VecEnv):
-    """
-    Multiplayer version of multi-snake.
-    Implements VecEnv directly to allow for multiple players without requiring proper multi-agent support.
-    Each player controls and receives rewards for a subset of the snakes.
-    Only one player has to reach length 11 on all its snakes for the game to be over.
-    """
-
-    def __init__(
-        self,
-        board_size: int = 10,
-        num_snakes: int = 4,
-        num_players: int = 2,
-        num_envs: int = 1,
-    ):
-        assert num_snakes % num_players == 0
-        self.envs = [
-            MultiSnake(board_size, num_snakes, num_players) for _ in range(num_envs)
-        ]
-        self.num_players = num_players
-        self.num_snakes = num_snakes
-
-    @classmethod
-    def env_cls(cls) -> Type[Environment]:
-        return MultiSnake
-
-    def _reset(self) -> List[Observation]:
-        obs = []
-        for env in self.envs:
-            o = env._reset()
-            obs.append(o)
-            obs.append(o)
-        return obs
-
-    def _act(self, actions: Sequence[Mapping[str, Action]]) -> List[Observation]:
-        obs = []
-        for i, env in enumerate(self.envs):
-            acts = actions[i * self.num_players : (i + 1) * self.num_players]
-            combined_acts = {}
-            for act in acts:
-                for k, v in act.items():
-                    assert isinstance(v, CategoricalAction)
-                    if k not in combined_acts:
-                        combined_acts[k] = v
-                    else:
-                        combined_acts[k].actions.extend(v.actions)
-            env._act(combined_acts)
-            for j in range(self.num_players):
-                obs.append(env._observe(player=j))
-            if obs[0].done:
-                env._reset()
-        return obs
