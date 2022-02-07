@@ -1,8 +1,10 @@
-import numpy as np
 import tempfile
-from entity_gym.serialization import Sample, SampleRecorder, Trace
-from entity_gym.environment import VecCategoricalActionMask, VecObs
+
+import numpy as np
 from ragged_buffer import RaggedBufferF32, RaggedBufferI64
+
+from entity_gym.environment import VecCategoricalActionMask, VecObs
+from entity_gym.serialization import Sample, SampleRecorder, Trace
 
 
 def test_serde_sample() -> None:
