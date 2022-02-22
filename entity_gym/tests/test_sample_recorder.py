@@ -1,7 +1,7 @@
 import tempfile
 
 import numpy as np
-from ragged_buffer import RaggedBufferF32, RaggedBufferI64
+from ragged_buffer import RaggedBufferF32, RaggedBufferI64, RaggedBufferBool
 
 from entity_gym.environment import VecCategoricalActionMask, VecObs
 from entity_gym.serialization import Sample, SampleRecorder, Trace
@@ -41,7 +41,8 @@ def test_serde_sample() -> None:
             },
             action_masks={
                 "move": VecCategoricalActionMask(
-                    actors=RaggedBufferI64.from_array(np.array([[[0]]])), mask=None
+                    actors=RaggedBufferI64.from_array(np.array([[[0]]])),
+                    mask=RaggedBufferBool.from_array(np.array([[[True, False, True]]])),
                 ),
                 "shoot": VecCategoricalActionMask(
                     actors=RaggedBufferI64.from_array(np.array([[[0]]])), mask=None
@@ -90,6 +91,10 @@ def test_serde_sample() -> None:
             assert len(trace.samples) == 2
             assert trace.samples[0].obs.reward[0] == 0.3124125987123489
             assert trace.samples[1].obs.reward[0] == 1.0
+            assert (
+                trace.samples[0].obs.action_masks["move"]
+                == sample.obs.action_masks["move"]
+            )
             np.testing.assert_equal(
                 trace.samples[0].obs.features["hero"][0].as_array(),
                 np.array([[1.0, 2.0, 0.3, 100.0, 10.0]], dtype=np.float32),

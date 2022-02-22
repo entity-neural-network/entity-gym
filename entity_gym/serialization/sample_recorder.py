@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict, List, Mapping, Optional, Sequence, Type, Any
+from entity_gym.environment.vec_env import VecActionMask
 
 from ragged_buffer import RaggedBufferF32, RaggedBufferI64
 import numpy as np
@@ -60,7 +61,19 @@ class SampleRecorder:
     ) -> None:
         self.path = path
         self.file = open(path, "wb")
-        # TODO: write header and obs space and act space
+
+        # Version 0
+        self.file.write(np.uint64(0).tobytes())
+
+        bytes = msgpack_numpy.dumps(
+            {
+                "act_space": act_space,
+                "obs_space": obs_space,
+            },
+            default=ragged_buffer_encode,
+        )
+        self.file.write(np.uint64(len(bytes)).tobytes())
+        self.file.write(bytes)
 
     def record(
         self,
