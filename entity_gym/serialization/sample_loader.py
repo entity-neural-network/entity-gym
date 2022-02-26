@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set, Tuple
 from entity_gym.environment.environment import ActionSpace
 from entity_gym.environment.vec_env import VecActionMask, VecCategoricalActionMask
+from entity_gym.ragged_dict import RaggedActionDict, RaggedBatchDict
 
 import msgpack_numpy
 from ragged_buffer import RaggedBufferF32, RaggedBufferI64
@@ -30,10 +31,48 @@ class Episode:
 
 
 @dataclass
+class MergedSamples:
+    entities: RaggedBatchDict[np.float32]
+    actions: RaggedBatchDict[np.int64]
+    logprobs: RaggedBatchDict[np.float32]
+    masks: RaggedActionDict
+    logits: Optional[RaggedBatchDict[np.float32]]
+    frames: int
+
+    @classmethod
+    def empty(clz) -> "MergedSamples":
+        return MergedSamples(
+            entities=RaggedBatchDict(RaggedBufferF32),
+            actions=RaggedBatchDict(RaggedBufferI64),
+            logprobs=RaggedBatchDict(RaggedBufferF32),
+            logits=None,
+            masks=RaggedActionDict(),
+            frames=0,
+        )
+
+    def push_sample(self, sample: Sample) -> None:
+        self.entities.extend(sample.obs.features)
+        self.actions.extend(sample.actions)
+        self.logprobs.extend(sample.probs)
+        if sample.logits is not None:
+            if self.logits is None:
+                self.logits = RaggedBatchDict(RaggedBufferF32)
+            self.logits.extend(sample.logits)
+        self.masks.extend(sample.obs.action_masks)
+        self.frames += len(sample.episode)
+
+
+@dataclass
 class Trace:
     action_space: Dict[str, ActionSpace]
     obs_space: ObsSpace
     samples: List[Sample]
+    subsample: int = 1
+
+    @classmethod
+    def load(cls, path: str, progress_bar: bool = False) -> "Trace":
+        with open(path, "rb") as f:
+            return cls.deserialize(f.read(), progress_bar=progress_bar)
 
     @classmethod
     def deserialize(cls, data: bytes, progress_bar: bool = False) -> "Trace":
@@ -44,7 +83,7 @@ class Trace:
         offset = 0
         # Read version
         version = int(np.frombuffer(data[:8], dtype=np.uint64)[0])
-        assert version == 0
+        assert version == 0 or version == 1
         header_len = int(np.frombuffer(data[8:16], dtype=np.uint64)[0])
         header = msgpack_numpy.loads(
             data[16 : 16 + header_len],
@@ -53,6 +92,7 @@ class Trace:
         )
         action_space = header["act_space"]
         obs_space = header["obs_space"]
+        subsample = header.get("subsample", 1)
 
         offset = 16 + header_len
         while offset < len(data):
@@ -62,7 +102,7 @@ class Trace:
             offset += size
             if progress_bar:
                 pbar.update(size + 8)
-        return Trace(action_space, obs_space, samples)
+        return Trace(action_space, obs_space, samples, subsample=subsample)
 
     def episodes(
         self, include_incomplete: bool = False, progress_bar: bool = False
@@ -123,3 +163,36 @@ class Trace:
             [e for e in episodes.values() if e.complete or include_incomplete],
             key=lambda e: e.number,
         )
+
+    def train_test_split(
+        self, test_frac: float = 0.1, progress_bar: bool = False
+    ) -> Tuple[MergedSamples, MergedSamples]:
+        if self.subsample == 1:
+            total_frames = len(self.samples) * len(self.samples[0].episode)
+        else:
+            total_frames = sum(len(s.episode) for s in self.samples)
+        if progress_bar:
+            pbar = tqdm.tqdm(total=len(self.samples))
+
+        test = MergedSamples.empty()
+        test_episodes: Set[int] = set()
+        i = 0
+        while test.frames < total_frames * test_frac:
+            sample = self.samples[i]
+            test_episodes.update(sample.episode)
+            test.push_sample(sample)
+            i += 1
+            if progress_bar:
+                pbar.update(1)
+
+        train = MergedSamples.empty()
+        for sample in self.samples[i:]:
+            # TODO: could be more efficient
+            if any(e in test_episodes for e in sample.episode):
+                continue
+            train.push_sample(sample)
+            if progress_bar:
+                i += 1
+                pbar.update(1)
+
+        return train, test

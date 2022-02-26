@@ -68,7 +68,9 @@ class EnvList(VecEnv):
                     for etype in mask.actor_types:
                         actors.extend(self.last_obs[i].ids[etype])
                 else:
-                    raise NotImplementedError()
+                    actors = []
+                    for ids in self.last_obs[i].ids.values():
+                        actors.extend(ids)
                 if isinstance(action_space[atype], CategoricalActionSpace):
                     _actions[atype] = CategoricalAction(
                         actors=actors,

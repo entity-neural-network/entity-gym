@@ -1,13 +1,11 @@
 from dataclasses import dataclass
-from typing import Dict, List, Mapping, Optional, Sequence, Type, Any
-from entity_gym.environment.vec_env import VecActionMask
+from typing import Dict, List, Mapping, Optional, Type, Any
 
 from ragged_buffer import RaggedBufferF32, RaggedBufferI64
 import numpy as np
 import msgpack_numpy
 
 from entity_gym.environment import (
-    Action,
     ActionSpace,
     Environment,
     VecObs,
@@ -57,18 +55,23 @@ class SampleRecorder:
     """
 
     def __init__(
-        self, path: str, act_space: Dict[str, ActionSpace], obs_space: ObsSpace
+        self,
+        path: str,
+        act_space: Dict[str, ActionSpace],
+        obs_space: ObsSpace,
+        subsample: int,
     ) -> None:
         self.path = path
         self.file = open(path, "wb")
 
         # Version 0
-        self.file.write(np.uint64(0).tobytes())
+        self.file.write(np.uint64(1).tobytes())
 
         bytes = msgpack_numpy.dumps(
             {
                 "act_space": act_space,
                 "obs_space": obs_space,
+                "subsample": subsample,
             },
             default=ragged_buffer_encode,
         )
@@ -89,16 +92,26 @@ class SampleRecorder:
 
 
 class SampleRecordingVecEnv(VecEnv):
-    def __init__(self, inner: VecEnv, out_path: str) -> None:
+    def __init__(
+        self,
+        inner: VecEnv,
+        out_path: str,
+        subsample: int = 1,
+    ) -> None:
         self.inner = inner
         self.out_path = out_path
+        self.subsample = subsample
         self.sample_recorder = SampleRecorder(
-            out_path, inner.env_cls().action_space(), inner.env_cls().obs_space()
+            out_path,
+            inner.env_cls().action_space(),
+            inner.env_cls().obs_space(),
+            subsample,
         )
         self.last_obs: Optional[VecObs] = None
         self.episodes = list(range(len(inner)))
         self.curr_step = [0] * len(inner)
         self.next_episode = len(inner)
+        self.rng = np.random.default_rng(0)
 
     def reset(self, obs_config: ObsSpace) -> VecObs:
         self.curr_step = [0] * len(self)
@@ -127,16 +140,50 @@ class SampleRecordingVecEnv(VecEnv):
             probs = {}
         # with tracer.span("record_samples"):
         assert self.last_obs is not None
-        self.sample_recorder.record(
-            Sample(
-                self.last_obs,
-                step=list(self.curr_step),
-                episode=list(self.episodes),
-                actions=actions,
-                probs=probs,
-                logits=logits,
+        if self.subsample > 1:
+            select = self.rng.integers(0, self.subsample, size=len(self.episodes)) == 0
+            indices = np.arange(len(self.episodes))[select]
+            if len(indices) > 0:
+                last_obs = VecObs(
+                    features={k: v[indices] for k, v in self.last_obs.features.items()},
+                    action_masks={
+                        k: v[indices] for k, v in self.last_obs.action_masks.items()
+                    },
+                    reward=self.last_obs.reward[select],
+                    done=self.last_obs.done[select],
+                    end_of_episode_info={
+                        i: self.last_obs.end_of_episode_info[i]
+                        for i in indices
+                        if i in self.last_obs.end_of_episode_info
+                    },
+                )
+                self.sample_recorder.record(
+                    Sample(
+                        obs=last_obs,
+                        step=[step for step, s in zip(self.curr_step, select) if s],
+                        episode=[e for e, s in zip(self.episodes, select) if s],
+                        actions={k: v[indices] for k, v in actions.items()},
+                        probs={k: v[indices] for k, v in probs.items()}
+                        if probs is not None
+                        else None,
+                        logits=(
+                            {k: v[indices] for k, v in logits.items()}
+                            if logits is not None
+                            else None
+                        ),
+                    )
+                )
+        else:
+            self.sample_recorder.record(
+                Sample(
+                    self.last_obs,
+                    step=list(self.curr_step),
+                    episode=list(self.episodes),
+                    actions=actions,
+                    probs=probs,
+                    logits=logits,
+                )
             )
-        )
         return self.record_obs(self.inner.act(actions, obs_filter))
 
     def render(self, **kwargs: Any) -> np.ndarray:

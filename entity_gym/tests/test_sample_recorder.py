@@ -76,7 +76,7 @@ def test_serde_sample() -> None:
     )
 
     with tempfile.NamedTemporaryFile(mode="wb", delete=False) as f:
-        sample_recorder = SampleRecorder(f.name, act_space=None, obs_space=None)  # type: ignore
+        sample_recorder = SampleRecorder(f.name, act_space=None, obs_space=None, subsample=1)  # type: ignore
         sample_recorder.record(sample)
         # modify the sample
         sample.obs.reward = np.array([1.0])
