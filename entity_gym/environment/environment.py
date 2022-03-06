@@ -55,8 +55,8 @@ class CategoricalActionMask:
 
     mask: Union[Sequence[Sequence[bool]], np.ndarray, None] = None
     """
-    A boolean array of shape (len(actors), len(choices)). If mask[i, j] is True, then
-    agent i can perform action j.
+    A boolean array of shape (len(actor_ids), len(choices)). If mask[i, j] is True, then
+    agent with id actor_ids[i] can perform action j.
     """
 
     def __post_init__(self) -> None:
@@ -99,8 +99,8 @@ class SelectEntityActionMask:
 
     mask: Optional[npt.NDArray[np.bool_]] = None
     """
-    An boolean array of shape (len(actors), len(actees)). If mask[i, j] is True, then
-    agent i can select entity j.
+    An boolean array of shape (len(actor_ids), len(actee_ids)). If mask[i, j] is True, then
+    the agent with id actor_ids[i] can select entity with id actee_ids[j].
     (NOT CURRENTLY IMPLEMENTED)
     """
 
