@@ -77,14 +77,32 @@ class VecCategoricalActionMask:
         assert isinstance(
             other, VecCategoricalActionMask
         ), f"Expected CategoricalActionMaskBatch, got {type(other)}"
-        self.actors.extend(other.actors)
         if self.mask is not None and other.mask is not None:
             self.mask.extend(other.mask)
         elif self.mask is None and other.mask is None:
             pass
+        elif self.mask is not None:
+            self.mask.extend(
+                RaggedBufferBool.from_flattened(
+                    flattened=np.ones(
+                        shape=(other.actors.items(), self.mask.size2()),
+                        dtype=np.bool_,
+                    ),
+                    lengths=other.actors.size1(),
+                )
+            )
+        elif other.mask is not None:
+            self.mask = RaggedBufferBool.from_flattened(
+                flattened=np.ones(
+                    shape=(self.actors.items(), other.mask.size2()),
+                    dtype=np.bool_,
+                ),
+                lengths=self.actors.size1(),
+            )
+            self.mask.extend(other.mask)
         else:
-            print(self.actors, self.mask, other.mask)
-            raise NotImplementedError()
+            raise Exception("Impossible!")
+        self.actors.extend(other.actors)
 
     def clear(self) -> None:
         self.actors.clear()

@@ -630,3 +630,77 @@ def test_merge_obs_actions_select_entity() -> None:
     assert np.all(
         obs_batch1.action_masks["action2"].actees.size1() == [0, 0, 0, 2, 1, 2]
     )
+
+
+def test_merge_empty_masks() -> None:
+    obs_batch1 = VecObs(
+        features={
+            "archer": RaggedBufferF32.from_flattened(
+                flattened=np.array([[10, 10, 10]] * 4, np.float32),
+                lengths=np.array([1, 2, 1]),
+            ),
+        },
+        action_masks={
+            "shoot": VecCategoricalActionMask(
+                actors=RaggedBufferI64.from_flattened(
+                    flattened=np.array([[0], [0], [1]], int),
+                    lengths=np.array([1, 2, 0]),
+                ),
+                mask=RaggedBufferBool.from_flattened(
+                    flattened=np.array(
+                        [[True, True], [True, False], [False, True]], bool
+                    ),
+                    lengths=np.array([1, 2, 0]),
+                ),
+            ),
+        },
+        reward=np.array([0] * 3, np.float32),
+        done=np.array([False] * 3, np.bool_),
+        end_of_episode_info={},
+    )
+
+    obs_batch2 = VecObs(
+        features={
+            "archer": RaggedBufferF32.from_flattened(
+                flattened=np.array([[10, 10, 10]] * 4, np.float32),
+                lengths=np.array([0, 1, 3]),
+            ),
+        },
+        action_masks={
+            "shoot": VecCategoricalActionMask(
+                actors=RaggedBufferI64.from_flattened(
+                    flattened=np.array([[0], [1], [2]], int),
+                    lengths=np.array([0, 0, 3]),
+                ),
+                mask=None,
+            ),
+        },
+        reward=np.array([0] * 3, np.float32),
+        done=np.array([False] * 3, np.bool_),
+        end_of_episode_info={},
+    )
+
+    obs_batch1.extend(obs_batch2)
+    obs_batch2.extend(obs_batch1)
+
+    assert np.array_equal(
+        obs_batch2.action_masks["shoot"].mask.size1(),  # type: ignore
+        np.array([0, 0, 3, 1, 2, 0, 0, 0, 3]),
+    ), f"{obs_batch2.action_masks['shoot'].mask.size1()}"  # type: ignore
+    assert np.array_equal(
+        obs_batch2.action_masks["shoot"].mask.as_array(),  # type: ignore
+        np.array(
+            [
+                [True, True],
+                [True, True],
+                [True, True],
+                [True, True],
+                [True, False],
+                [False, True],
+                [True, True],
+                [True, True],
+                [True, True],
+            ],
+            bool,
+        ),
+    )
