@@ -4,7 +4,7 @@
 wandb/
 runs/
 .dmypy.json
-
+__pycache__
 
 # Pycharm
 .idea/

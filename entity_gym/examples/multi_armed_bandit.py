@@ -39,7 +39,7 @@ class MultiArmedBandit(Environment):
 
     def reset(self) -> Observation:
         self.step = 0
-        self._total_reward = 0
+        self._total_reward = 0.0
         return self.observe()
 
     def act(self, action: Mapping[str, Action]) -> Observation:
@@ -48,7 +48,7 @@ class MultiArmedBandit(Environment):
         a = action["pull"]
         assert isinstance(a, CategoricalAction), f"{a} is not a CategoricalAction"
         if a.actions[0] == 0:
-            reward = 1
+            reward = 1 / 32.0
         else:
             reward = 0
         done = self.step >= 32

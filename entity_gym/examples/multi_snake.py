@@ -215,7 +215,7 @@ class MultiSnake(Environment):
                 ),
             },
             ids={
-                "SnakeHead": [0, 1],
+                "SnakeHead": list(range(self.num_snakes)),
             },
             actions={
                 "move": CategoricalActionMask(
