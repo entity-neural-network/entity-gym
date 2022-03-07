@@ -289,13 +289,7 @@ def test_batch_obs_categorical_action() -> None:
             # all entities can move. Entity 3_1 can also choose items
             "move": CategoricalActionMask(
                 actor_ids=["entity3_0", "entity1_0", "entity3_1"],
-                mask=np.array(
-                    [
-                        [True, True, True, True],
-                        [True, True, True, True],
-                        [True, True, True, True],
-                    ]
-                ),
+                mask=None,
             ),
             "choose_inventory_item": CategoricalActionMask(
                 ["entity3_1"], mask=np.array([[True, True, True]])

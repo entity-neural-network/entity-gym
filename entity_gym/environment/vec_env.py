@@ -248,9 +248,8 @@ def batch_obs(
             if isinstance(space, CategoricalActionSpace):
                 vec_action = action_masks[atype]
                 assert isinstance(vec_action, VecCategoricalActionMask)
-                vec_action.actors.push(
-                    o._actor_indices(atype, obs_space).reshape(-1, 1)
-                )
+                actor_indices = o._actor_indices(atype, obs_space)
+                vec_action.actors.push(actor_indices.reshape(-1, 1))
                 if action.mask is not None:
                     if vec_action.mask is None:
                         vec_action.mask = RaggedBufferBool.from_flattened(
@@ -261,6 +260,12 @@ def batch_obs(
                     if not isinstance(amask, np.ndarray):
                         amask = np.array(amask, dtype=np.bool_)
                     vec_action.mask.push(amask)
+                elif vec_action.mask is not None:
+                    vec_action.mask.push(
+                        np.ones(
+                            (len(actor_indices), len(space.choices)), dtype=np.bool_
+                        )
+                    )
             elif isinstance(space, SelectEntityActionSpace):
                 vec_action = action_masks[atype]
                 assert isinstance(vec_action, VecSelectEntityActionMask)
