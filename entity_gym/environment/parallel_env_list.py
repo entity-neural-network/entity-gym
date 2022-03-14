@@ -47,7 +47,7 @@ class CloudpickleWrapper:
 
 class MsgpackConnectionWrapper(object):
     """
-    Use msgpack instead of pickle to send and recieve data from workers.
+    Use msgpack instead of pickle to send and receive data from workers.
     """
 
     def __init__(self, conn: Connection) -> None:

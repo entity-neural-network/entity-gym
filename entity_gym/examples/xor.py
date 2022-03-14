@@ -36,7 +36,7 @@ class Xor(Environment):
     """
     There are three entities types, each with one instance on each timstep.
     The Bit1 and Bit2 entities are randomly set to 0 or 1.
-    The Ouput entity has one action that should be set to the output of the XOR between the two bits.
+    The Output entity has one action that should be set to the output of the XOR between the two bits.
     """
 
     @classmethod

@@ -21,7 +21,7 @@ from entity_gym.environment import (
 @dataclass
 class CherryPick(Environment):
     """
-    The CherryPick environment is initalized with a list of 32 cherries of random quality.
+    The CherryPick environment is initialized with a list of 32 cherries of random quality.
     On each timestep, the player can pick up one of the cherries.
     The player receives a reward of the quality of the cherry picked.
     The environment ends after 16 steps.

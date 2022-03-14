@@ -38,7 +38,7 @@ ActionSpace = Union[CategoricalActionSpace, SelectEntityActionSpace]
 class CategoricalActionMask:
     """
     Action mask for categorical action that specifies which agents can perform the action,
-    and includes a dense mask that further contraints the choices available to each agent.
+    and includes a dense mask that further constraints the choices available to each agent.
     """
 
     actor_ids: Optional[Sequence[EntityID]] = None
@@ -69,7 +69,7 @@ class CategoricalActionMask:
 class SelectEntityActionMask:
     """
     Action mask for select entity action that specifies which agents can perform the action,
-    and includes a dense mask that further contraints what other entities can be selected by
+    and includes a dense mask that further constraints what other entities can be selected by
     each actor.
     """
 

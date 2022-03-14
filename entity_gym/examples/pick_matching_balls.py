@@ -27,7 +27,7 @@ class Ball:
 @dataclass
 class PickMatchingBalls(Environment):
     """
-    The PickMatchingBalls environment is initalized with a list of 32 balls of different colors.
+    The PickMatchingBalls environment is initialized with a list of 32 balls of different colors.
     On each timestamp, the player can pick up one of the balls.
     The episode ends when the player picks up a ball of a different color from the last one.
     The player receives a reward equal to the number of balls picked up divided by the maximum number of balls of the same color.
