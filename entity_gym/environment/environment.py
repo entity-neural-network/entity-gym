@@ -120,6 +120,7 @@ ActionMask = Union[CategoricalActionMask, SelectEntityActionMask]
 class EpisodeStats:
     length: int
     total_reward: float
+    metrics: Optional[Dict[str, float]] = None
 
 
 @dataclass
