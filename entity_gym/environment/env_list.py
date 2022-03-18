@@ -43,7 +43,8 @@ class EnvList(VecEnv):
         return cls.cls
 
     def reset(self, obs_space: ObsSpace) -> VecObs:
-        return self._batch_obs([e.reset_filter(obs_space) for e in self.envs])
+        batch = self._batch_obs([e.reset_filter(obs_space) for e in self.envs])
+        return batch
 
     def render(self, **kwargs: Any) -> npt.NDArray[np.uint8]:
         return np.stack([e.render(**kwargs) for e in self.envs])

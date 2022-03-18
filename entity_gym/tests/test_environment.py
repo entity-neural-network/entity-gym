@@ -370,6 +370,7 @@ def test_merge_obs_entities() -> None:
         reward=np.array([0] * 10, np.float32),
         done=np.array([False] * 10, np.bool_),
         end_of_episode_info={},
+        visible={},
     )
 
     obs_batch2 = VecObs(
@@ -387,6 +388,7 @@ def test_merge_obs_entities() -> None:
         reward=np.array([0] * 10, np.float32),
         done=np.array([False] * 10, np.bool_),
         end_of_episode_info={},
+        visible={},
     )
 
     VecObs.extend(obs_batch1, obs_batch2)
@@ -458,6 +460,7 @@ def test_merge_obs_actions_categorical() -> None:
         reward=np.array([0] * 10, np.float32),
         done=np.array([False] * 10, np.bool_),
         end_of_episode_info={},
+        visible={},
     )
 
     obs_batch2 = VecObs(
@@ -504,6 +507,7 @@ def test_merge_obs_actions_categorical() -> None:
         reward=np.array([0] * 10, np.float32),
         done=np.array([False] * 10, np.bool_),
         end_of_episode_info={},
+        visible={},
     )
 
     VecObs.extend(obs_batch1, obs_batch2)
@@ -567,6 +571,7 @@ def test_merge_obs_actions_select_entity() -> None:
         reward=np.array([0] * 10, np.float32),
         done=np.array([False] * 10, np.bool_),
         end_of_episode_info={},
+        visible={},
     )
 
     obs_batch2 = VecObs(
@@ -605,6 +610,7 @@ def test_merge_obs_actions_select_entity() -> None:
         reward=np.array([0] * 10, np.float32),
         done=np.array([False] * 10, np.bool_),
         end_of_episode_info={},
+        visible={},
     )
 
     obs_batch1.extend(obs_batch2)
@@ -651,6 +657,7 @@ def test_merge_empty_masks() -> None:
         reward=np.array([0] * 3, np.float32),
         done=np.array([False] * 3, np.bool_),
         end_of_episode_info={},
+        visible={},
     )
 
     obs_batch2 = VecObs(
@@ -672,6 +679,7 @@ def test_merge_empty_masks() -> None:
         reward=np.array([0] * 3, np.float32),
         done=np.array([False] * 3, np.bool_),
         end_of_episode_info={},
+        visible={},
     )
 
     obs_batch1.extend(obs_batch2)

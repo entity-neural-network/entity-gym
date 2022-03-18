@@ -141,6 +141,20 @@ class EntityObs:
 
 @dataclass
 class Observation:
+    """
+    Observation returned by the environment on one timestep.
+
+    Attributes:
+        features: Maps each entity type to a list of features for the entities of that type.
+        actions: Maps each action type to an ActionMask specifying which entities can perform
+            the action.
+        reward: Reward received on this timestep.
+        done: Whether the episode has ended.
+        ids: Maps each entity type to a list of entity ids for the entities of that type.
+        visible: Optional mask for each entity type that prevents the policy but not the
+            value function from observing certain entities.
+    """
+
     features: Mapping[
         EntityType, Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
     ]
@@ -148,6 +162,9 @@ class Observation:
     done: bool
     reward: float
     ids: Mapping[EntityType, Sequence[EntityID]] = field(default_factory=dict)
+    visible: Mapping[EntityType, Union[npt.NDArray[np.bool_], Sequence[bool]]] = field(
+        default_factory=dict
+    )
     end_of_episode_info: Optional[EpisodeStats] = None
 
     def __post_init__(self) -> None:

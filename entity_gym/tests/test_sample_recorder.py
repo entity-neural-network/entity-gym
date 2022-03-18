@@ -39,6 +39,7 @@ def test_serde_sample() -> None:
                     ),
                 ),
             },
+            visible={},
             action_masks={
                 "move": VecCategoricalActionMask(
                     actors=RaggedBufferI64.from_array(np.array([[[0]]])),

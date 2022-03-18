@@ -115,6 +115,8 @@ VecActionMask = Union[VecCategoricalActionMask, VecSelectEntityActionMask]
 @dataclass
 class VecObs:
     features: Dict[EntityType, RaggedBufferF32]
+    # Optional mask to hide specific entities from the policy but not the value function
+    visible: Dict[EntityType, RaggedBufferBool]
     action_masks: Dict[ActionType, VecActionMask]
     reward: npt.NDArray[np.float32]
     done: npt.NDArray[np.bool_]
@@ -128,6 +130,9 @@ class VecObs:
                     feats=feats.size2(), sequences=num_envs
                 )
             self.features[etype].extend(feats)
+        for etype, feats in self.features.items():
+            if etype not in b.features:
+                feats.extend(empty_ragged_f32(feats.size2(), len(b.reward)))
         for atype, amask in b.action_masks.items():
             if atype not in self.action_masks:
                 raise NotImplementedError()
@@ -138,6 +143,25 @@ class VecObs:
         num_envs = len(self.reward)
         for i, stats in b.end_of_episode_info.items():
             self.end_of_episode_info[i + num_envs] = stats
+        for etype in self.features.keys():
+            if etype in b.visible:
+                if etype not in self.visible:
+                    self.visible[etype] = RaggedBufferBool.from_flattened(
+                        flattened=np.ones(
+                            shape=(self.features[etype].items(), 1), dtype=np.bool_
+                        ),
+                        lengths=self.features[etype].size1(),
+                    )
+                self.visible[etype].extend(b.visible[etype])
+            elif etype in self.visible:
+                self.visible[etype].extend(
+                    RaggedBufferBool.from_flattened(
+                        flattened=np.ones(
+                            shape=(b.features[etype].items(), 1), dtype=np.bool_
+                        ),
+                        lengths=b.features[etype].size1(),
+                    )
+                )
 
 
 class VecEnv(ABC):
@@ -177,6 +201,7 @@ def batch_obs(
     Converts a list of observations into a batch of observations.
     """
     features: Dict[EntityType, RaggedBufferF32] = {}
+    visible: Dict[EntityType, RaggedBufferBool] = {}
     action_masks: Dict[ActionType, VecActionMask] = {}
     reward = []
     done = []
@@ -216,6 +241,22 @@ def batch_obs(
                 features[entity_type].push(
                     np.zeros((0, len(entity.features)), dtype=np.float32)
                 )
+
+        for etype, vis in o.visible.items():
+            if etype not in visible:
+                lengths = []
+                for j in range(i):
+                    if etype in obs[j].features:
+                        lengths.append(len(obs[j].features[etype]))
+                    else:
+                        lengths.append(0)
+                visible[etype] = RaggedBufferBool.from_flattened(
+                    np.ones((sum(lengths), 1), dtype=np.bool_),
+                    lengths=np.array(lengths, dtype=np.int64),
+                )
+            if not isinstance(vis, np.ndarray):
+                vis = np.array(vis, dtype=np.bool_)
+            visible[etype].push(vis.reshape(-1, 1))
 
         for atype, space in action_space.items():
             if atype not in o.actions:
@@ -286,6 +327,7 @@ def batch_obs(
 
     return VecObs(
         features,
+        visible,
         action_masks,
         np.array(reward, dtype=np.float32),
         np.array(done, dtype=np.bool_),

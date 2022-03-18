@@ -156,6 +156,7 @@ class SampleRecordingVecEnv(VecEnv):
                         for i in indices
                         if i in self.last_obs.end_of_episode_info
                     },
+                    visible={k: v[indices] for k, v in self.last_obs.visible.items()},
                 )
                 self.sample_recorder.record(
                     Sample(

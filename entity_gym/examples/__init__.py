@@ -12,6 +12,7 @@ from entity_gym.examples.not_hotdog import NotHotdog
 from entity_gym.examples.xor import Xor
 from entity_gym.examples.count import Count
 from entity_gym.examples.floor_is_lava import FloorIsLava
+from entity_gym.examples.rock_paper_scissors import RockPaperScissors
 
 ENV_REGISTRY: Dict[str, Type[Environment]] = {
     "MoveToOrigin": MoveToOrigin,
@@ -25,4 +26,5 @@ ENV_REGISTRY: Dict[str, Type[Environment]] = {
     "Count": Count,
     "FloorIsLava": FloorIsLava,
     "MineSweeper": MineSweeper,
+    "RockPaperScissors": RockPaperScissors,
 }

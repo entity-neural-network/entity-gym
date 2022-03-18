@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, Tuple
 from entity_gym.environment.environment import ActionSpace
-from entity_gym.environment.vec_env import VecActionMask, VecCategoricalActionMask
+from entity_gym.environment.vec_env import VecActionMask
 from entity_gym.ragged_dict import RaggedActionDict, RaggedBatchDict
 
 import msgpack_numpy
-from ragged_buffer import RaggedBufferF32, RaggedBufferI64
+from ragged_buffer import RaggedBufferF32, RaggedBufferI64, RaggedBufferBool
 import tqdm
 import numpy as np
 
@@ -22,6 +22,7 @@ class Episode:
     number: int
     steps: int
     entities: Dict[str, RaggedBufferF32]
+    visible: Dict[str, RaggedBufferBool]
     actions: Dict[str, RaggedBufferI64]
     masks: Dict[str, VecActionMask]
     logprobs: Dict[str, RaggedBufferF32]
@@ -33,6 +34,7 @@ class Episode:
 @dataclass
 class MergedSamples:
     entities: RaggedBatchDict[np.float32]
+    visible: RaggedBatchDict[np.bool_]
     actions: RaggedBatchDict[np.int64]
     logprobs: RaggedBatchDict[np.float32]
     masks: RaggedActionDict
@@ -43,6 +45,7 @@ class MergedSamples:
     def empty(clz) -> "MergedSamples":
         return MergedSamples(
             entities=RaggedBatchDict(RaggedBufferF32),
+            visible=RaggedBatchDict(RaggedBufferBool),
             actions=RaggedBatchDict(RaggedBufferI64),
             logprobs=RaggedBatchDict(RaggedBufferF32),
             logits=None,
@@ -52,6 +55,7 @@ class MergedSamples:
 
     def push_sample(self, sample: Sample) -> None:
         self.entities.extend(sample.obs.features)
+        self.visible.extend(sample.obs.visible)
         self.actions.extend(sample.actions)
         self.logprobs.extend(sample.probs)
         if sample.logits is not None:
@@ -124,6 +128,7 @@ class Trace:
                         {},
                         {},
                         {},
+                        {},
                         0.0,
                     )
 
@@ -137,6 +142,11 @@ class Trace:
                         episodes[e].entities[name] = feats[i]
                     else:
                         episodes[e].entities[name].extend(feats[i])
+                for name, vis in sample.obs.visible.items():
+                    if name not in episodes[e].visible:
+                        episodes[e].visible[name] = vis[i]
+                    else:
+                        episodes[e].visible[name].extend(vis[i])
                 for name, acts in sample.actions.items():
                     if name not in episodes[e].actions:
                         episodes[e].actions[name] = acts[i]
