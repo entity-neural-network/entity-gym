@@ -12,9 +12,9 @@ from typing import (
     Type,
     Union,
 )
+
 import numpy as np
 import numpy.typing as npt
-
 
 EntityID = Any
 EntityType = str
@@ -277,8 +277,7 @@ class CategoricalAction:
     actions: npt.NDArray[np.int64]
 
     def items(self) -> Generator[Tuple[EntityID, int], None, None]:
-        for i, j in zip(self.actors, self.actions):
-            yield i, j
+        yield from zip(self.actors, self.actions)
 
 
 @dataclass
@@ -287,8 +286,7 @@ class SelectEntityAction:
     actees: Sequence[EntityID]
 
     def items(self) -> Generator[Tuple[EntityID, EntityID], None, None]:
-        for i, j in zip(self.actors, self.actees):
-            yield i, j
+        yield from zip(self.actors, self.actees)
 
 
 Action = Union[CategoricalAction, SelectEntityAction]

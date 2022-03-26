@@ -1,21 +1,22 @@
 from dataclasses import dataclass, field
-from entity_gym.environment.environment import EntityType
-import numpy as np
 from typing import Dict, List, Mapping
 
+import numpy as np
+
 from entity_gym.environment import (
-    SelectEntityActionMask,
+    Action,
+    ActionSpace,
     Entity,
     EntityID,
     Environment,
     EpisodeStats,
+    Observation,
     ObsSpace,
     SelectEntityAction,
+    SelectEntityActionMask,
     SelectEntityActionSpace,
-    ActionSpace,
-    Observation,
-    Action,
 )
+from entity_gym.environment.environment import EntityType
 
 
 @dataclass

@@ -1,5 +1,7 @@
-from typing import Dict, Mapping, Type
+from typing import Mapping, Type
+
 import numpy as np
+
 from entity_gym.environment.environment import (
     Action,
     ActionType,

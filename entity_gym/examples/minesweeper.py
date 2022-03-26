@@ -1,6 +1,6 @@
 import random
-import numpy as np
-from typing import Dict, List, Mapping, Optional, Tuple
+from typing import Dict, List, Mapping, Tuple
+
 from entity_gym.environment import *
 
 

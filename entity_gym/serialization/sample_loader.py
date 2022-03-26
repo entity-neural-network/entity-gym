@@ -1,20 +1,17 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Set, Tuple
+
+import msgpack_numpy
+import numpy as np
+import tqdm
+from ragged_buffer import RaggedBufferBool, RaggedBufferF32, RaggedBufferI64
+
+from entity_gym.environment import ObsSpace
 from entity_gym.environment.environment import ActionSpace
 from entity_gym.environment.vec_env import VecActionMask
 from entity_gym.ragged_dict import RaggedActionDict, RaggedBatchDict
-
-import msgpack_numpy
-from ragged_buffer import RaggedBufferF32, RaggedBufferI64, RaggedBufferBool
-import tqdm
-import numpy as np
-
-from entity_gym.environment import (
-    Action,
-    ObsSpace,
-)
-from entity_gym.serialization.sample_recorder import Sample
 from entity_gym.serialization.msgpack_ragged import ragged_buffer_decode
+from entity_gym.serialization.sample_recorder import Sample
 
 
 @dataclass
@@ -170,7 +167,7 @@ class Trace:
                             episodes[e].logits[name].extend(logits[i])
             prev_episodes = sample.episode
         return sorted(
-            [e for e in episodes.values() if e.complete or include_incomplete],
+            (e for e in episodes.values() if e.complete or include_incomplete),
             key=lambda e: e.number,
         )
 

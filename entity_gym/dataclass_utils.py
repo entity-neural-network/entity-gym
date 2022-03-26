@@ -1,11 +1,9 @@
-from typing import Any, List, Dict, Type
 from dataclasses import is_dataclass
+from typing import Any, Dict, List, Type
+
 import numpy as np
 
-from .environment import (
-    Entity,
-    ObsSpace,
-)
+from .environment import Entity, ObsSpace
 
 
 def obs_space_from_dataclasses(*dss: Type) -> ObsSpace:
@@ -16,11 +14,7 @@ def obs_space_from_dataclasses(*dss: Type) -> ObsSpace:
         # TODO: check field types are valid
         entities[ds.__name__] = Entity(
             features=list(
-                [
-                    key
-                    for key in ds.__dataclass_fields__.keys()
-                    if not key.startswith("_")
-                ]
+                key for key in ds.__dataclass_fields__.keys() if not key.startswith("_")
             ),
         )
     return ObsSpace(entities)

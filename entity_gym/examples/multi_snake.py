@@ -1,24 +1,21 @@
-from dataclasses import dataclass
-from typing import Dict, List, Mapping, Sequence, Tuple, Type
 import random
-from entity_gym.environment.environment import ActionType
-from entity_gym.environment.vec_env import VecObs, batch_obs
-import numpy as np
 from copy import deepcopy
-from ragged_buffer import RaggedBufferI64
+from dataclasses import dataclass
+from typing import Dict, List, Mapping, Tuple
+
+import numpy as np
 
 from entity_gym.environment import (
+    Action,
+    ActionSpace,
     CategoricalAction,
     CategoricalActionMask,
+    CategoricalActionSpace,
     Entity,
     Environment,
     EpisodeStats,
-    ObsSpace,
-    CategoricalActionSpace,
-    ActionSpace,
     Observation,
-    Action,
-    VecEnv,
+    ObsSpace,
 )
 
 

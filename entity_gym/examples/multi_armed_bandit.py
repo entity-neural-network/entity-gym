@@ -1,19 +1,19 @@
 from dataclasses import dataclass
-import numpy as np
-import random
 from typing import Dict, Mapping
 
+import numpy as np
+
 from entity_gym.environment import (
+    Action,
+    ActionSpace,
     CategoricalAction,
     CategoricalActionMask,
+    CategoricalActionSpace,
     Entity,
     Environment,
-    CategoricalActionSpace,
-    ActionSpace,
     EpisodeStats,
-    ObsSpace,
     Observation,
-    Action,
+    ObsSpace,
 )
 
 

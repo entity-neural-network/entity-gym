@@ -1,16 +1,16 @@
 import argparse
-from typing import Dict, Type
+from typing import Dict
+
 import numpy as np
 
 from entity_gym.environment import (
-    CategoricalAction,
-    SelectEntityActionMask,
-    Environment,
-    ObsSpace,
-    CategoricalActionSpace,
     Action,
+    CategoricalAction,
+    CategoricalActionSpace,
     Observation,
+    ObsSpace,
     SelectEntityAction,
+    SelectEntityActionMask,
     SelectEntityActionSpace,
 )
 from entity_gym.examples import ENV_REGISTRY

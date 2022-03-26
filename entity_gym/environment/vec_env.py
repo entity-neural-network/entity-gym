@@ -1,29 +1,22 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import (
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Type,
-    Union,
-    overload,
-)
-from entity_gym.environment.environment import (
-    ActionSpace,
-    CategoricalActionSpace,
-    Environment,
-    EpisodeStats,
-    ObsSpace,
-    Observation,
-    SelectEntityActionSpace,
-    EntityType,
-    ActionType,
-)
+from typing import Any, Dict, List, Mapping, Optional, Type, Union, overload
+
 import numpy as np
 import numpy.typing as npt
-from ragged_buffer import RaggedBufferF32, RaggedBufferI64, RaggedBufferBool
+from ragged_buffer import RaggedBufferBool, RaggedBufferF32, RaggedBufferI64
+
+from entity_gym.environment.environment import (
+    ActionSpace,
+    ActionType,
+    CategoricalActionSpace,
+    EntityType,
+    Environment,
+    EpisodeStats,
+    Observation,
+    ObsSpace,
+    SelectEntityActionSpace,
+)
 
 
 @dataclass

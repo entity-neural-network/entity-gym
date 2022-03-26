@@ -1,8 +1,9 @@
 import time
-import torch
 from collections import defaultdict
-from typing import DefaultDict, Dict, Generator, List, Optional, Tuple
 from contextlib import contextmanager
+from typing import DefaultDict, Dict, Generator, List
+
+import torch
 
 
 class Tracer:

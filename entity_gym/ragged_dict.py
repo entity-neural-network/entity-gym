@@ -1,8 +1,10 @@
 from dataclasses import dataclass, field
 from typing import Dict, Generic, Mapping, Type, TypeVar
-from ragged_buffer import RaggedBuffer, RaggedBufferI64, RaggedBufferF32
+
 import numpy as np
 import numpy.typing as npt
+from ragged_buffer import RaggedBuffer
+
 from .environment.vec_env import VecActionMask
 
 ScalarType = TypeVar("ScalarType", bound=np.generic, covariant=True)
