@@ -10,7 +10,6 @@ from entity_gym.environment import (
     CategoricalActionMask,
     CategoricalActionSpace,
     Environment,
-    EpisodeStats,
     Observation,
     ObsSpace,
 )
@@ -107,5 +106,4 @@ class RockPaperScissors(Environment):
             visible={"Opponent": [self.cheat]},
             reward=reward,
             done=done,
-            end_of_episode_info=EpisodeStats(1, reward),
         )

@@ -99,7 +99,7 @@ class EnvList(VecEnv):
                 new_obs = env.reset_filter(obs_space)
                 new_obs.done = True
                 new_obs.reward = obs.reward
-                new_obs.end_of_episode_info = obs.end_of_episode_info
+                new_obs.metrics = obs.metrics
                 observations.append(new_obs)
             else:
                 observations.append(obs)

@@ -13,7 +13,6 @@ from entity_gym.environment import (
     CategoricalActionSpace,
     Entity,
     Environment,
-    EpisodeStats,
     Observation,
     ObsSpace,
 )
@@ -221,9 +220,4 @@ class MultiSnake(Environment):
             },
             reward=self.scores[player] - self.last_scores[player],
             done=done,
-            end_of_episode_info=EpisodeStats(
-                length=self.step, total_reward=self.scores[player]
-            )
-            if done
-            else None,
         )

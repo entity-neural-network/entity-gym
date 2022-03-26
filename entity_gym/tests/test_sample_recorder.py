@@ -55,7 +55,7 @@ def test_serde_sample() -> None:
             },
             reward=np.array([0.3124125987123489]),
             done=np.array([False]),
-            end_of_episode_info={},
+            metrics={},
         ),
         probs={
             "move": RaggedBufferF32.from_array(

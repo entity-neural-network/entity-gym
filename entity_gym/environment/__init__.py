@@ -17,7 +17,6 @@ __all__ = [
     "CategoricalActionMask",
     "SelectEntityActionMask",
     "ObsSpace",
-    "EpisodeStats",
     "Entity",
     "EntityType",
     "ActionType",

@@ -12,7 +12,6 @@ from entity_gym.environment import (
     CategoricalActionSpace,
     Entity,
     Environment,
-    EpisodeStats,
     Observation,
     ObsSpace,
 )
@@ -93,5 +92,4 @@ class NotHotdog(Environment):
             ids={"Player": [0]},
             reward=reward,
             done=done,
-            end_of_episode_info=EpisodeStats(self.step, reward) if done else None,
         )

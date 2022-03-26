@@ -10,7 +10,6 @@ from entity_gym.environment import (
     CategoricalActionMask,
     CategoricalActionSpace,
     Environment,
-    EpisodeStats,
     Observation,
     ObsSpace,
 )
@@ -92,5 +91,4 @@ class Xor(Environment):
             ids={"Output": [0], "Bit1": [1], "Bit2": [2]},
             reward=reward,
             done=done,
-            end_of_episode_info=EpisodeStats(1, reward) if done else None,
         )

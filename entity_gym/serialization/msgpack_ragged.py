@@ -18,7 +18,6 @@ WHITELIST = {
     "SelectEntityActionSpace": SelectEntityActionSpace,
     "CategoricalActionSpace": CategoricalActionSpace,
     "Entity": Entity,
-    "EpisodeStats": EpisodeStats,
 }
 
 

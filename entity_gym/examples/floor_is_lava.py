@@ -10,7 +10,6 @@ from entity_gym.environment import (
     CategoricalActionMask,
     CategoricalActionSpace,
     Environment,
-    EpisodeStats,
     Observation,
     ObsSpace,
 )
@@ -124,5 +123,4 @@ class FloorIsLava(Environment):
             ids={"Player": [0]},
             reward=reward,
             done=done,
-            end_of_episode_info=EpisodeStats(1, reward) if done else None,
         )

@@ -12,7 +12,6 @@ from entity_gym.environment import (
     CategoricalActionMask,
     CategoricalActionSpace,
     Environment,
-    EpisodeStats,
     Observation,
     ObsSpace,
 )
@@ -170,5 +169,4 @@ class Minefield(Environment):
             ids={"Vehicle": ["Vehicle"]},
             reward=reward,
             done=done,
-            end_of_episode_info=EpisodeStats(self.step, reward) if done else None,
         )

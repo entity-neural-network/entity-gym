@@ -117,13 +117,6 @@ ActionMask = Union[CategoricalActionMask, SelectEntityActionMask]
 
 
 @dataclass
-class EpisodeStats:
-    length: int
-    total_reward: float
-    metrics: Optional[Dict[str, float]] = None
-
-
-@dataclass
 class Entity:
     features: List[str]
 
@@ -165,7 +158,7 @@ class Observation:
     visible: Mapping[EntityType, Union[npt.NDArray[np.bool_], Sequence[bool]]] = field(
         default_factory=dict
     )
-    end_of_episode_info: Optional[EpisodeStats] = None
+    metrics: Dict[str, float] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         self._id_to_index: Optional[Dict[EntityID, int]] = None
@@ -178,7 +171,7 @@ class Observation:
         actions: Mapping[ActionType, ActionMask],
         done: bool,
         reward: float,
-        end_of_episode_info: Optional[EpisodeStats] = None,
+        metrics: Optional[Dict[str, float]] = None,
     ) -> "Observation":
         return cls(
             features={
@@ -194,7 +187,7 @@ class Observation:
                 for etype, entity in entities.items()
                 if entity is not None and entity.ids is not None
             },
-            end_of_episode_info=end_of_episode_info,
+            metrics=metrics or {},
         )
 
     def _actor_indices(
@@ -370,7 +363,7 @@ class Environment(ABC):
             done=obs.done,
             reward=obs.reward,
             ids=obs.ids,
-            end_of_episode_info=obs.end_of_episode_info,
+            metrics=obs.metrics,
         )
 
     @classmethod

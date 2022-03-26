@@ -9,7 +9,6 @@ from entity_gym.environment import (
     Entity,
     EntityID,
     Environment,
-    EpisodeStats,
     Observation,
     ObsSpace,
     SelectEntityAction,
@@ -79,9 +78,6 @@ class CherryPick(Environment):
             },
             reward=self.last_reward,
             done=done,
-            end_of_episode_info=EpisodeStats(self.step, self.total_reward)
-            if done
-            else None,
         )
 
     def act(self, action: Mapping[str, Action]) -> Observation:

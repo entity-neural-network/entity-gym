@@ -12,7 +12,6 @@ from entity_gym.environment import (
     CategoricalActionSpace,
     Entity,
     Environment,
-    EpisodeStats,
     Observation,
     ObsSpace,
 )
@@ -142,10 +141,4 @@ class MoveToOrigin(Environment):
             reward=(self.last_x_pos ** 2 + self.last_y_pos ** 2) ** 0.5
             - (self.x_pos ** 2 + self.y_pos ** 2) ** 0.5,
             done=done,
-            end_of_episode_info=EpisodeStats(
-                length=self.step,
-                total_reward=1 - (self.x_pos ** 2 + self.y_pos ** 2) ** 0.5,
-            )
-            if done
-            else None,
         )

@@ -145,11 +145,7 @@ class SampleRecordingVecEnv(VecEnv):
                     },
                     reward=self.last_obs.reward[select],
                     done=self.last_obs.done[select],
-                    end_of_episode_info={
-                        i: self.last_obs.end_of_episode_info[i]
-                        for i in indices
-                        if i in self.last_obs.end_of_episode_info
-                    },
+                    metrics=self.last_obs.metrics,
                     visible={k: v[indices] for k, v in self.last_obs.visible.items()},
                 )
                 self.sample_recorder.record(

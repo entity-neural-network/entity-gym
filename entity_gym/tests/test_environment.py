@@ -67,7 +67,6 @@ def test_parallel_env_list() -> None:
     }
     obs_act = envs.act(actions_xor, Xor.obs_space())
     assert len(obs_act.done) == 100
-    assert len(obs_act.end_of_episode_info) == 100
 
 
 def test_batch_obs_entities() -> None:
@@ -370,7 +369,7 @@ def test_merge_obs_entities() -> None:
         action_masks={},
         reward=np.array([0] * 10, np.float32),
         done=np.array([False] * 10, np.bool_),
-        end_of_episode_info={},
+        metrics={},
         visible={},
     )
 
@@ -388,7 +387,7 @@ def test_merge_obs_entities() -> None:
         action_masks={},
         reward=np.array([0] * 10, np.float32),
         done=np.array([False] * 10, np.bool_),
-        end_of_episode_info={},
+        metrics={},
         visible={},
     )
 
@@ -460,7 +459,7 @@ def test_merge_obs_actions_categorical() -> None:
         },
         reward=np.array([0] * 10, np.float32),
         done=np.array([False] * 10, np.bool_),
-        end_of_episode_info={},
+        metrics={},
         visible={},
     )
 
@@ -507,7 +506,7 @@ def test_merge_obs_actions_categorical() -> None:
         },
         reward=np.array([0] * 10, np.float32),
         done=np.array([False] * 10, np.bool_),
-        end_of_episode_info={},
+        metrics={},
         visible={},
     )
 
@@ -571,7 +570,7 @@ def test_merge_obs_actions_select_entity() -> None:
         },
         reward=np.array([0] * 10, np.float32),
         done=np.array([False] * 10, np.bool_),
-        end_of_episode_info={},
+        metrics={},
         visible={},
     )
 
@@ -610,7 +609,7 @@ def test_merge_obs_actions_select_entity() -> None:
         },
         reward=np.array([0] * 10, np.float32),
         done=np.array([False] * 10, np.bool_),
-        end_of_episode_info={},
+        metrics={},
         visible={},
     )
 
@@ -657,7 +656,7 @@ def test_merge_empty_masks() -> None:
         },
         reward=np.array([0] * 3, np.float32),
         done=np.array([False] * 3, np.bool_),
-        end_of_episode_info={},
+        metrics={},
         visible={},
     )
 
@@ -679,7 +678,7 @@ def test_merge_empty_masks() -> None:
         },
         reward=np.array([0] * 3, np.float32),
         done=np.array([False] * 3, np.bool_),
-        end_of_episode_info={},
+        metrics={},
         visible={},
     )
 

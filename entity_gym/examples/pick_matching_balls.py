@@ -9,7 +9,6 @@ from entity_gym.environment import (
     ActionSpace,
     Entity,
     Environment,
-    EpisodeStats,
     Observation,
     ObsSpace,
     SelectEntityAction,
@@ -70,7 +69,6 @@ class PickMatchingBalls(Environment):
             self.max_balls if not self.randomize else random.randint(3, self.max_balls)
         )
         self.balls = [Ball(color=random.randint(0, 5)) for _ in range(num_balls)]
-        self.step = 0
         return self.observe()
 
     def observe(self) -> Observation:
@@ -116,7 +114,6 @@ class PickMatchingBalls(Environment):
             },
             reward=reward,
             done=done,
-            end_of_episode_info=EpisodeStats(self.step, reward) if done else None,
         )
 
     def act(self, actions: Mapping[ActionType, Action]) -> Observation:
@@ -125,5 +122,4 @@ class PickMatchingBalls(Environment):
         for selected_ball in action.actees:
             assert not self.balls[selected_ball].selected
             self.balls[selected_ball].selected = True
-        self.step += 1
         return self.observe()

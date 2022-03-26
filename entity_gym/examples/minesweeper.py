@@ -102,7 +102,6 @@ class MineSweeper(Environment):
             done=done,
             # Give reward of 1.0 for defusing all mines
             reward=reward,
-            end_of_episode_info=EpisodeStats(10, reward) if done else None,
         )
 
     def act(self, actions: Mapping[ActionType, Action]) -> Observation:
