@@ -201,7 +201,7 @@ class VecObs:
 
 class VecEnv(ABC):
     @abstractmethod
-    def env_cls(cls) -> Type[Environment]:
+    def env_cls(self) -> Type[Environment]:
         """
         Returns the class of the underlying environment.
         """
