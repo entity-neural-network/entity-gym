@@ -24,7 +24,7 @@ class AddMetricsWrapper(VecEnv):
         self.env = env
         self.total_reward = np.zeros(len(env), dtype=np.float32)
         self.total_steps = np.zeros(len(env), dtype=np.int64)
-        self.filter = filter or np.ones(len(env), dtype=np.bool8)
+        self.filter = np.ones(len(env), dtype=np.bool8) if filter is None else filter
 
     def env_cls(self) -> Type[Environment]:
         return self.env.env_cls()
