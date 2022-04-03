@@ -125,6 +125,7 @@ class MultiSnake(Environment):
         self.step += 1
         move_action = action["move"]
         self.last_scores = deepcopy(self.scores)
+        food_to_spawn = []
         assert isinstance(move_action, CategoricalAction)
         for id, move in move_action.items():
             snake = self.snakes[id]
@@ -153,7 +154,8 @@ class MultiSnake(Environment):
                             1.0 / (self.max_snake_length - 1) / self.num_snakes
                         )
                     self.food.pop(i)
-                    self._spawn_food(snake.color)
+                    # Don't spawn food immediately since it might spawn in front of another snake that hasn't moved yet
+                    food_to_spawn.append(snake.color)
                     break
             if not ate_food:
                 snake.segments = snake.segments[1:]
@@ -166,6 +168,8 @@ class MultiSnake(Environment):
                 ]
             ):
                 game_over = True
+        for color in food_to_spawn:
+            self._spawn_food(color)
         if self.step >= self.max_steps:
             game_over = True
         return self._observe(done=game_over)

@@ -123,7 +123,7 @@ class Entity:
 
 @dataclass
 class ObsSpace:
-    entities: Dict[str, Entity]
+    entities: Dict[EntityType, Entity]
 
 
 @dataclass
