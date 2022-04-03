@@ -9,6 +9,8 @@ python = ">=3.8,<3.10"
 ragged-buffer = "^0.3.6"
 msgpack = "^1.0.3"
 msgpack-numpy = "^0.4.7"
+cloudpickle = "^2.0.0"
+tqdm = "^4.63.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
