@@ -18,6 +18,7 @@ WHITELIST = {
     "SelectEntityActionSpace": SelectEntityActionSpace,
     "CategoricalActionSpace": CategoricalActionSpace,
     "Entity": Entity,
+    "Metric": Metric,
 }
 
 
