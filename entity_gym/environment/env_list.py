@@ -95,7 +95,6 @@ class EnvList(VecEnv):
 
             obs = env.act_filter(_actions, obs_space)
             if obs.done:
-                # TODO: something is wrong with the interface here
                 new_obs = env.reset_filter(obs_space)
                 new_obs.done = True
                 new_obs.reward = obs.reward

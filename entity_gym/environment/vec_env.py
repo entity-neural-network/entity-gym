@@ -143,6 +143,10 @@ class Metric:
 
 @dataclass
 class VecObs:
+    """
+    A batch of observations from a vectorized environment.
+    """
+
     features: Dict[EntityType, RaggedBufferF32]
     # Optional mask to hide specific entities from the policy but not the value function
     visible: Dict[EntityType, RaggedBufferBool]
@@ -200,6 +204,11 @@ class VecObs:
 
 
 class VecEnv(ABC):
+    """
+    Interface for vectorized environments. The main goal of VecEnv is to allow
+    for maximally efficient environment implementations.
+    """
+
     @abstractmethod
     def env_cls(self) -> Type[Environment]:
         """
@@ -209,12 +218,19 @@ class VecEnv(ABC):
 
     @abstractmethod
     def reset(self, obs_config: ObsSpace) -> VecObs:
+        """
+        Resets all environments and returns the initial observations.
+        """
         raise NotImplementedError
 
     @abstractmethod
     def act(
         self, actions: Mapping[ActionType, RaggedBufferI64], obs_filter: ObsSpace
     ) -> VecObs:
+        """
+        Performs the given actions on the underlying environments and returns the resulting observations.
+        Any environment that reaches the end of its episode is reset and returns the initial observation of the next episode.
+        """
         raise NotImplementedError
 
     @abstractmethod
