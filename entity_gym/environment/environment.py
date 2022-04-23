@@ -290,17 +290,15 @@ class Environment(ABC):
     Abstraction over reinforcement learning environments with observations based on structured lists of entities.
     """
 
-    @classmethod
     @abstractmethod
-    def obs_space(cls) -> ObsSpace:
+    def obs_space(self) -> ObsSpace:
         """
         Returns a dictionary mapping the name of observable entities to their type.
         """
         raise NotImplementedError
 
-    @classmethod
     @abstractmethod
-    def action_space(cls) -> Dict[str, ActionSpace]:
+    def action_space(self) -> Dict[str, ActionSpace]:
         """
         Returns a dictionary mapping the name of actions to their action space.
         """
@@ -324,7 +322,7 @@ class Environment(ABC):
         raise NotImplementedError
 
     def reset_filter(self, obs_filter: ObsSpace) -> Observation:
-        return self.__class__.filter_obs(self.reset(), obs_filter)
+        return self.filter_obs(self.reset(), obs_filter)
 
     def render(self, **kwargs: Any) -> npt.NDArray[np.uint8]:
         """
@@ -338,14 +336,13 @@ class Environment(ABC):
     def act_filter(
         self, action: Mapping[ActionType, Action], obs_filter: ObsSpace
     ) -> Observation:
-        return self.__class__.filter_obs(self.act(action), obs_filter)
+        return self.filter_obs(self.act(action), obs_filter)
 
     def close(self) -> None:
         pass
 
-    @classmethod
-    def filter_obs(cls, obs: Observation, obs_filter: ObsSpace) -> Observation:
-        selectors = cls._compile_feature_filter(obs_filter)
+    def filter_obs(self, obs: Observation, obs_filter: ObsSpace) -> Observation:
+        selectors = self._compile_feature_filter(obs_filter)
         features: Dict[
             EntityType, Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
         ] = {}
@@ -366,9 +363,8 @@ class Environment(ABC):
             metrics=obs.metrics,
         )
 
-    @classmethod
-    def _compile_feature_filter(cls, obs_space: ObsSpace) -> Dict[str, np.ndarray]:
-        obs_space = cls.obs_space()
+    def _compile_feature_filter(self, obs_space: ObsSpace) -> Dict[str, np.ndarray]:
+        obs_space = self.obs_space()
         feature_selection = {}
         for entity_name, entity in obs_space.entities.items():
             feature_selection[entity_name] = np.array(

@@ -34,7 +34,6 @@ class MineSweeper(Environment):
         self.robots: List[Tuple[int, int]] = []
         self.mines: List[Tuple[int, int]] = []
 
-    @classmethod
     def obs_space(cls) -> ObsSpace:
         return ObsSpace(
             {
@@ -44,7 +43,6 @@ class MineSweeper(Environment):
             }
         )
 
-    @classmethod
     def action_space(cls) -> Dict[ActionType, ActionSpace]:
         return {
             "Move": CategoricalActionSpace(

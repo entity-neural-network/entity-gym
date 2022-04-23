@@ -37,12 +37,10 @@ class Xor(Environment):
     The Output entity has one action that should be set to the output of the XOR between the two bits.
     """
 
-    @classmethod
-    def obs_space(cls) -> ObsSpace:
+    def obs_space(self) -> ObsSpace:
         return obs_space_from_dataclasses(Output, Bit1, Bit2)
 
-    @classmethod
-    def action_space(cls) -> Dict[str, ActionSpace]:
+    def action_space(self) -> Dict[str, ActionSpace]:
         return {"output": CategoricalActionSpace(["0", "1"])}
 
     def reset_filter(self, obs_space: ObsSpace) -> Observation:
@@ -51,7 +49,7 @@ class Xor(Environment):
         return self.observe(obs_space)
 
     def reset(self) -> Observation:
-        return self.reset_filter(Xor.obs_space())
+        return self.reset_filter(self.obs_space())
 
     def act_filter(
         self, action: Mapping[str, Action], obs_filter: ObsSpace
@@ -70,7 +68,7 @@ class Xor(Environment):
     def act(self, action: Mapping[str, Action]) -> Observation:
         return self.act_filter(
             action,
-            Xor.obs_space(),
+            self.obs_space(),
         )
 
     def observe(

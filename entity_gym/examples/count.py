@@ -44,12 +44,10 @@ class Count(Environment):
         ), "masked_choices must be between 1 and 10"
         self.masked_choices = masked_choices
 
-    @classmethod
-    def obs_space(cls) -> ObsSpace:
+    def obs_space(self) -> ObsSpace:
         return obs_space_from_dataclasses(Player, Bean)
 
-    @classmethod
-    def action_space(cls) -> Dict[str, ActionSpace]:
+    def action_space(self) -> Dict[str, ActionSpace]:
         return {
             "count": CategoricalActionSpace(
                 ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
@@ -69,7 +67,7 @@ class Count(Environment):
         return self.observe(obs_space, mask)
 
     def reset(self) -> Observation:
-        return self.reset_filter(Count.obs_space())
+        return self.reset_filter(self.obs_space())
 
     def act_filter(
         self, action: Mapping[str, Action], obs_filter: ObsSpace
@@ -87,7 +85,7 @@ class Count(Environment):
     def act(self, action: Mapping[str, Action]) -> Observation:
         return self.act_filter(
             action,
-            Count.obs_space(),
+            self.obs_space(),
         )
 
     def observe(

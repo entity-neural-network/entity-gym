@@ -6,6 +6,7 @@ from ragged_buffer import RaggedBufferI64
 
 from entity_gym.environment.environment import (
     Action,
+    ActionSpace,
     ActionType,
     CategoricalAction,
     CategoricalActionSpace,
@@ -25,11 +26,10 @@ class EnvList(VecEnv):
         self, env_cls: Type[Environment], env_kwargs: Dict[str, Any], num_envs: int
     ):
         self.envs = [env_cls(**env_kwargs) for _ in range(num_envs)]  # type: ignore
-        self.cls = env_cls
         self.last_obs: List[Observation] = []
-
-    def env_cls(cls) -> Type[Environment]:
-        return cls.cls
+        env = self.envs[0] if num_envs > 0 else env_cls(**env_kwargs)  # type: ignore
+        self._obs_space = env.obs_space()
+        self._action_space = env.action_space()
 
     def reset(self, obs_space: ObsSpace) -> VecObs:
         batch = self._batch_obs([e.reset_filter(obs_space) for e in self.envs])
@@ -46,7 +46,7 @@ class EnvList(VecEnv):
         self, actions: Mapping[str, RaggedBufferI64], obs_space: ObsSpace
     ) -> VecObs:
         observations = []
-        action_space = self.cls.action_space()
+        action_space = self.action_space()
         for i, env in enumerate(self.envs):
             _actions: Dict[ActionType, Action] = {}
             for atype, action in actions.items():
@@ -106,7 +106,13 @@ class EnvList(VecEnv):
 
     def _batch_obs(self, obs: List[Observation]) -> VecObs:
         self.last_obs = obs
-        return batch_obs(obs, self.cls.obs_space(), self.cls.action_space())
+        return batch_obs(obs, self.obs_space(), self.action_space())
 
     def __len__(self) -> int:
         return len(self.envs)
+
+    def obs_space(self) -> ObsSpace:
+        return self._obs_space
+
+    def action_space(self) -> Dict[ActionType, ActionSpace]:
+        return self._action_space

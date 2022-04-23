@@ -10,7 +10,13 @@ import numpy.typing as npt
 from ragged_buffer import RaggedBufferI64
 
 from entity_gym.environment.env_list import EnvList
-from entity_gym.environment.environment import Environment, Observation, ObsSpace
+from entity_gym.environment.environment import (
+    ActionSpace,
+    ActionType,
+    Environment,
+    Observation,
+    ObsSpace,
+)
 from entity_gym.environment.vec_env import VecEnv, VecObs, batch_obs
 from entity_gym.serialization.msgpack_ragged import (
     ragged_buffer_decode,
@@ -142,17 +148,16 @@ class ParallelEnvList(VecEnv):
             self.processes.append(process)
             work_remote.close()
 
-        self.cls = env_cls
-
-    def env_cls(cls) -> Type[Environment]:
-        return cls.cls
+        env = env_cls(**env_kwargs)  # type: ignore
+        self._obs_space = env.obs_space()
+        self._action_space = env.action_space()
 
     def reset(self, obs_space: ObsSpace) -> VecObs:
         for remote in self.remotes:
             remote.send(("reset", obs_space))
 
         # Empty initialized observation batch
-        observations = batch_obs([], self.cls.obs_space(), self.cls.action_space())
+        observations = batch_obs([], self.obs_space(), self.action_space())
 
         for remote in self.remotes:
             remote_obs_batch = remote.recv()
@@ -194,7 +199,7 @@ class ParallelEnvList(VecEnv):
             remote.send(("act", (action, obs_space)))
 
         # Empty initialized observation batch
-        observations = batch_obs([], self.cls.obs_space(), self.cls.action_space())
+        observations = batch_obs([], self.obs_space(), self.action_space())
 
         for remote in self.remotes:
             remote_obs_batch = remote.recv()
@@ -203,3 +208,9 @@ class ParallelEnvList(VecEnv):
 
     def __len__(self) -> int:
         return self.num_envs
+
+    def obs_space(self) -> ObsSpace:
+        return self._obs_space
+
+    def action_space(self) -> Dict[ActionType, ActionSpace]:
+        return self._action_space

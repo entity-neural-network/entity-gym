@@ -33,8 +33,7 @@ class CherryPick(Environment):
     last_reward: float = 0.0
     step: int = 0
 
-    @classmethod
-    def obs_space(cls) -> ObsSpace:
+    def obs_space(self) -> ObsSpace:
         return ObsSpace(
             {
                 "Cherry": Entity(["quality"]),
@@ -42,8 +41,7 @@ class CherryPick(Environment):
             }
         )
 
-    @classmethod
-    def action_space(cls) -> Dict[str, ActionSpace]:
+    def action_space(self) -> Dict[str, ActionSpace]:
         return {"Pick Cherry": SelectEntityActionSpace()}
 
     def reset(self) -> Observation:

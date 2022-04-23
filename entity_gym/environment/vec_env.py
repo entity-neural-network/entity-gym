@@ -1,7 +1,7 @@
 import copy
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, List, Mapping, Optional, Type, Union, overload
+from typing import Any, Dict, List, Mapping, Optional, Union, overload
 
 import numpy as np
 import numpy.typing as npt
@@ -12,7 +12,6 @@ from entity_gym.environment.environment import (
     ActionType,
     CategoricalActionSpace,
     EntityType,
-    Environment,
     Observation,
     ObsSpace,
     SelectEntityActionSpace,
@@ -210,9 +209,16 @@ class VecEnv(ABC):
     """
 
     @abstractmethod
-    def env_cls(self) -> Type[Environment]:
+    def obs_space(self) -> ObsSpace:
         """
-        Returns the class of the underlying environment.
+        Returns a dictionary mapping the name of observable entities to their type.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def action_space(self) -> Dict[ActionType, ActionSpace]:
+        """
+        Returns a dictionary mapping the name of actions to their action space.
         """
         raise NotImplementedError
 

@@ -43,8 +43,8 @@ if __name__ == "__main__":
 
     print(env_cls)
     env = env_cls()
-    obs_space = env_cls.obs_space()
-    actions = env_cls.action_space()
+    obs_space = env.obs_space()
+    actions = env.action_space()
     obs = env.reset_filter(obs_space)
     total_reward = obs.reward
     while not obs.done:

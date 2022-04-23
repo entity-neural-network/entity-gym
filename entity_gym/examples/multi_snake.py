@@ -67,7 +67,6 @@ class MultiSnake(Environment):
         self.step = 0
         self.max_steps = max_steps
 
-    @classmethod
     def obs_space(cls) -> ObsSpace:
         return ObsSpace(
             {
@@ -77,7 +76,6 @@ class MultiSnake(Environment):
             }
         )
 
-    @classmethod
     def action_space(cls) -> Dict[str, ActionSpace]:
         return {
             "move": CategoricalActionSpace(

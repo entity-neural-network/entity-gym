@@ -46,12 +46,10 @@ class RockPaperScissors(Environment):
         self.cheat = cheat
         self.reset()
 
-    @classmethod
-    def obs_space(cls) -> ObsSpace:
+    def obs_space(self) -> ObsSpace:
         return obs_space_from_dataclasses(Player, Opponent)
 
-    @classmethod
-    def action_space(cls) -> Dict[str, ActionSpace]:
+    def action_space(self) -> Dict[str, ActionSpace]:
         return {"throw": CategoricalActionSpace(["rock", "paper", "scissors"])}
 
     def reset_filter(self, obs_space: ObsSpace) -> Observation:
@@ -65,7 +63,7 @@ class RockPaperScissors(Environment):
         return self.observe(obs_space)
 
     def reset(self) -> Observation:
-        return self.reset_filter(RockPaperScissors.obs_space())
+        return self.reset_filter(self.obs_space())
 
     def act_filter(
         self, action: Mapping[str, Action], obs_filter: ObsSpace
@@ -85,7 +83,7 @@ class RockPaperScissors(Environment):
     def act(self, action: Mapping[str, Action]) -> Observation:
         return self.act_filter(
             action,
-            RockPaperScissors.obs_space(),
+            self.obs_space(),
         )
 
     def observe(

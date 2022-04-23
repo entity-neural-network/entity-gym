@@ -22,7 +22,6 @@ class MultiArmedBandit(Environment):
     Task with single cateorical action with 5 choices which gives a reward of 1 for choosing action 0 and reward of 0 otherwise.
     """
 
-    @classmethod
     def obs_space(cls) -> ObsSpace:
         return ObsSpace(
             {
@@ -30,7 +29,6 @@ class MultiArmedBandit(Environment):
             }
         )
 
-    @classmethod
     def action_space(cls) -> Dict[str, ActionSpace]:
         return {
             "pull": CategoricalActionSpace(["A", "B", "C", "D", "E"]),

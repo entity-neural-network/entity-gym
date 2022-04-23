@@ -1,4 +1,4 @@
-from typing import Mapping, Type
+from typing import Any, Mapping, Type
 
 import numpy as np
 
@@ -15,10 +15,12 @@ from entity_gym.environment.environment import (
 
 
 def validated_env(env: Type[Environment]) -> Type[Environment]:
-    obs_space = env.obs_space()
-    action_space = env.action_space()
-
     class ValidatedEnv(env):  # type: ignore
+        def __init__(self, **kwargs: Any) -> None:
+            super().__init__(**kwargs)
+            self._obs_space = self.obs_space()
+            self._action_space = self.action_space()
+
         def act(self, action: Mapping[ActionType, Action]) -> Observation:
             obs = super().act(action)
             try:
@@ -45,21 +47,21 @@ def validated_env(env: Type[Environment]) -> Type[Environment]:
             # Validate features
             for entity_type, entity_features in obs.features.items():
                 assert (
-                    entity_type in obs_space.entities
-                ), f"Features contain entity of type '{entity_type}' which is not in observation space: {list(obs_space.entities.keys())}"
+                    entity_type in self._obs_space.entities
+                ), f"Features contain entity of type '{entity_type}' which is not in observation space: {list(self._obs_space.entities.keys())}"
                 if isinstance(entity_features, np.ndarray):
                     assert (
                         entity_features.dtype == np.float32
                     ), f"Features of entity of type '{entity_type}' have invalid dtype: {entity_features.dtype}. Expected: {np.float32}"
                     shape = entity_features.shape
                     assert len(shape) == 2 and shape[1] == len(
-                        obs_space.entities[entity_type].features
-                    ), f"Features of entity of type '{entity_type}' have invalid shape: {shape}. Expected: (n, {len(obs_space.entities[entity_type].features)})"
+                        self._obs_space.entities[entity_type].features
+                    ), f"Features of entity of type '{entity_type}' have invalid shape: {shape}. Expected: (n, {len(self._obs_space.entities[entity_type].features)})"
                 else:
                     for i, entity in enumerate(entity_features):
                         assert len(entity) == len(
-                            obs_space.entities[entity_type].features
-                        ), f"Features of {i}-th entity of type '{entity_type}' have invalid length: {len(entity)}. Expected: {len(obs_space.entities[entity_type].features)}"
+                            self._obs_space.entities[entity_type].features
+                        ), f"Features of {i}-th entity of type '{entity_type}' have invalid length: {len(entity)}. Expected: {len(self._obs_space.entities[entity_type].features)}"
 
                 if entity_type in obs.ids:
                     assert len(obs.ids[entity_type]) == len(
@@ -70,8 +72,8 @@ def validated_env(env: Type[Environment]) -> Type[Environment]:
             previous_ids = set()
             for entity_type, entity_ids in obs.ids.items():
                 assert (
-                    entity_type in obs_space.entities
-                ), f"IDs contain entity of type '{entity_type}' which is not in observation space: {list(obs_space.entities.keys())}"
+                    entity_type in self._obs_space.entities
+                ), f"IDs contain entity of type '{entity_type}' which is not in observation space: {list(self._obs_space.entities.keys())}"
                 for id in entity_ids:
                     assert (
                         id not in previous_ids
@@ -79,12 +81,12 @@ def validated_env(env: Type[Environment]) -> Type[Environment]:
                     previous_ids.add(id)
 
             # Validate actions
-            ids = obs.id_to_index(obs_space)
+            ids = obs.id_to_index(self._obs_space)
             for action_type, action_mask in obs.actions.items():
                 assert (
-                    action_type in action_space
-                ), f"Actions contain action of type '{action_type}' which is not in action space: {list(action_space.keys())}"
-                space = action_space[action_type]
+                    action_type in self._action_space
+                ), f"Actions contain action of type '{action_type}' which is not in action space: {list(self._action_space.keys())}"
+                space = self._action_space[action_type]
                 if isinstance(space, CategoricalActionSpace):
                     assert isinstance(
                         action_mask, CategoricalActionMask
@@ -105,7 +107,7 @@ def validated_env(env: Type[Environment]) -> Type[Environment]:
                             mask.dtype == np.bool_
                         ), f"Action of type '{action_type}' has invalid dtype: {mask.dtype}. Expected: {np.bool_}"
                         shape = mask.shape
-                        actor_indices = obs._actor_indices(action_type, obs_space)
+                        actor_indices = obs._actor_indices(action_type, self._obs_space)
                         assert shape == (
                             len(actor_indices),
                             len(space.choices),
@@ -127,7 +129,9 @@ def validated_env(env: Type[Environment]) -> Type[Environment]:
                                 mask[i]
                             ), f"Action of type '{action_type}' contains invalid mask for {i}-th actor: {mask[i]}. Expected at least one possible action"
 
-                elif isinstance(action_space[action_type], SelectEntityActionSpace):
+                elif isinstance(
+                    self._action_space[action_type], SelectEntityActionSpace
+                ):
                     assert isinstance(
                         action_mask, SelectEntityActionMask
                     ), f"Action of type '{action_type}' has invalid type: {type(action_mask)}. Expected: SelectEntityActionMask"

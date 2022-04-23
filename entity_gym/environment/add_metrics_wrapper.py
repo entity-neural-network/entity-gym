@@ -1,10 +1,10 @@
-from typing import Any, Mapping, Optional, Type
+from typing import Any, Dict, Mapping, Optional
 
 import numpy as np
 import numpy.typing as npt
 from ragged_buffer import RaggedBufferI64
 
-from entity_gym.environment.environment import ActionType, Environment, ObsSpace
+from entity_gym.environment.environment import ActionSpace, ActionType, ObsSpace
 from entity_gym.environment.vec_env import Metric, VecEnv, VecObs
 
 
@@ -25,9 +25,6 @@ class AddMetricsWrapper(VecEnv):
         self.total_reward = np.zeros(len(env), dtype=np.float32)
         self.total_steps = np.zeros(len(env), dtype=np.int64)
         self.filter = np.ones(len(env), dtype=np.bool8) if filter is None else filter
-
-    def env_cls(self) -> Type[Environment]:
-        return self.env.env_cls()
 
     def reset(self, obs_config: ObsSpace) -> VecObs:
         return self.track_metrics(self.env.reset(obs_config))
@@ -71,3 +68,9 @@ class AddMetricsWrapper(VecEnv):
             max=obs.reward.max(),
         )
         return obs
+
+    def action_space(self) -> Dict[ActionType, ActionSpace]:
+        return self.env.action_space()
+
+    def obs_space(self) -> ObsSpace:
+        return self.env.obs_space()

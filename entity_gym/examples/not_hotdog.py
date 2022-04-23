@@ -24,8 +24,7 @@ class NotHotdog(Environment):
     The "Player" entity is always present, and has an action to classify the other entity as hotdog or not hotdog.
     """
 
-    @classmethod
-    def obs_space(cls) -> ObsSpace:
+    def obs_space(self) -> ObsSpace:
         return ObsSpace(
             {
                 "Player": Entity(["step"]),
@@ -34,8 +33,7 @@ class NotHotdog(Environment):
             }
         )
 
-    @classmethod
-    def action_space(cls) -> Dict[str, ActionSpace]:
+    def action_space(self) -> Dict[str, ActionSpace]:
         return {
             "classify": CategoricalActionSpace(["hotdog", "not_hotdog"]),
             "unused_action": CategoricalActionSpace(["0", "1"]),

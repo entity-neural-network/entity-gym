@@ -40,8 +40,7 @@ class PickMatchingBalls(Environment):
         False  # randomize the number of balls to be between 3 and max_balls
     )
 
-    @classmethod
-    def obs_space(cls) -> ObsSpace:
+    def obs_space(self) -> ObsSpace:
         return ObsSpace(
             {
                 "Ball": Entity(
@@ -60,8 +59,7 @@ class PickMatchingBalls(Environment):
             }
         )
 
-    @classmethod
-    def action_space(cls) -> Dict[ActionType, ActionSpace]:
+    def action_space(self) -> Dict[ActionType, ActionSpace]:
         return {"Pick Ball": SelectEntityActionSpace()}
 
     def reset(self) -> Observation:

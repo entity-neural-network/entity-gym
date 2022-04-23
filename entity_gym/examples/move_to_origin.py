@@ -32,7 +32,6 @@ class MoveToOrigin(Environment):
     last_y_pos = 0.0
     step: int = 0
 
-    @classmethod
     def obs_space(cls) -> ObsSpace:
         return ObsSpace(
             {
@@ -42,7 +41,6 @@ class MoveToOrigin(Environment):
             }
         )
 
-    @classmethod
     def action_space(cls) -> Dict[str, ActionSpace]:
         return {
             "horizontal_thruster": CategoricalActionSpace(

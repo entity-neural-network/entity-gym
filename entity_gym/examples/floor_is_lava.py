@@ -40,12 +40,10 @@ class FloorIsLava(Environment):
     The player receives a reward of 1 if they move to the high ground, and 0 otherwise.
     """
 
-    @classmethod
-    def obs_space(cls) -> ObsSpace:
+    def obs_space(self) -> ObsSpace:
         return obs_space_from_dataclasses(Lava, HighGround, Player)
 
-    @classmethod
-    def action_space(cls) -> Dict[str, ActionSpace]:
+    def action_space(self) -> Dict[str, ActionSpace]:
         return {
             "move": CategoricalActionSpace(["n", "ne", "e", "se", "s", "sw", "w", "nw"])
         }
@@ -71,7 +69,7 @@ class FloorIsLava(Environment):
         return obs
 
     def reset(self) -> Observation:
-        return self.reset_filter(FloorIsLava.obs_space())
+        return self.reset_filter(self.obs_space())
 
     def act_filter(
         self, action: Mapping[str, Action], obs_filter: ObsSpace
@@ -96,7 +94,7 @@ class FloorIsLava(Environment):
     def act(self, action: Mapping[str, Action]) -> Observation:
         return self.act_filter(
             action,
-            FloorIsLava.obs_space(),
+            self.obs_space(),
         )
 
     def observe(self, obs_filter: ObsSpace, done: bool = False) -> Observation:
