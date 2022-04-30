@@ -1,7 +1,7 @@
 import multiprocessing as mp
 import multiprocessing.connection as conn
 from multiprocessing.connection import Connection
-from typing import Any, Dict, Generator, List, Mapping, Optional, Type
+from typing import Any, Callable, Dict, Generator, List, Mapping, Optional
 
 import cloudpickle
 import msgpack_numpy
@@ -98,8 +98,7 @@ class ParallelEnvList(VecEnv):
 
     def __init__(
         self,
-        env_cls: Type[Environment],
-        env_kwargs: Dict[str, Any],
+        create_env: Callable[[], Environment],
         num_envs: int,
         num_processes: int,
         start_method: Optional[str] = None,
@@ -122,8 +121,7 @@ class ParallelEnvList(VecEnv):
         self.envs_per_process = int(num_envs / num_processes)
 
         env_list_configs = [
-            (env_cls, env_kwargs, self.envs_per_process)
-            for _ in range(self.num_processes)
+            (create_env, self.envs_per_process) for _ in range(self.num_processes)
         ]
 
         self.remotes = []
@@ -148,7 +146,7 @@ class ParallelEnvList(VecEnv):
             self.processes.append(process)
             work_remote.close()
 
-        env = env_cls(**env_kwargs)  # type: ignore
+        env = create_env()
         self._obs_space = env.obs_space()
         self._action_space = env.action_space()
 

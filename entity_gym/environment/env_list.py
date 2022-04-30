@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Type
+from typing import Any, Callable, Dict, List, Mapping
 
 import numpy as np
 import numpy.typing as npt
@@ -22,12 +22,10 @@ from entity_gym.environment.vec_env import VecEnv, VecObs, batch_obs
 
 
 class EnvList(VecEnv):
-    def __init__(
-        self, env_cls: Type[Environment], env_kwargs: Dict[str, Any], num_envs: int
-    ):
-        self.envs = [env_cls(**env_kwargs) for _ in range(num_envs)]  # type: ignore
+    def __init__(self, create_env: Callable[[], Environment], num_envs: int):
+        self.envs = [create_env() for _ in range(num_envs)]
         self.last_obs: List[Observation] = []
-        env = self.envs[0] if num_envs > 0 else env_cls(**env_kwargs)  # type: ignore
+        env = self.envs[0] if num_envs > 0 else create_env()
         self._obs_space = env.obs_space()
         self._action_space = env.action_space()
 

@@ -25,7 +25,7 @@ from entity_gym.examples.xor import Xor
 
 def test_env_list() -> None:
     # 100 environments
-    envs = EnvList(CherryPick, {}, 100)
+    envs = EnvList(CherryPick, 100)
     obs_space = envs.obs_space()
 
     obs_reset = envs.reset(obs_space)
@@ -41,7 +41,7 @@ def test_env_list() -> None:
 
 def test_parallel_env_list() -> None:
     # 100 environments split across 10 processes
-    envs = ParallelEnvList(CherryPick, {}, 100, 10)
+    envs = ParallelEnvList(CherryPick, 100, 10)
     obs_space = envs.obs_space()
 
     obs_reset = envs.reset(obs_space)
@@ -53,7 +53,7 @@ def test_parallel_env_list() -> None:
     obs_act = envs.act(actions, obs_space)
     assert len(obs_act.done) == 100
 
-    envs = ParallelEnvList(Xor, {}, 100, 10)
+    envs = ParallelEnvList(Xor, 100, 10)
     obs_reset = envs.reset(envs.obs_space())
     assert len(obs_reset.done) == 100
     actions_xor = {

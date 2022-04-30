@@ -361,6 +361,7 @@ class Environment(ABC):
             reward=obs.reward,
             ids=obs.ids,
             metrics=obs.metrics,
+            visible=obs.visible,
         )
 
     def _compile_feature_filter(self, obs_space: ObsSpace) -> Dict[str, np.ndarray]:
