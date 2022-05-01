@@ -65,9 +65,9 @@ class Xor(Environment):
 
         return self.observe(obs_filter, done=True, reward=reward)
 
-    def act(self, action: Mapping[str, Action]) -> Observation:
+    def act(self, actions: Mapping[str, Action]) -> Observation:
         return self.act_filter(
-            action,
+            actions,
             self.obs_space(),
         )
 

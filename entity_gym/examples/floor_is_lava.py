@@ -91,9 +91,9 @@ class FloorIsLava(Environment):
         obs = self.observe(obs_filter, done=True)
         return obs
 
-    def act(self, action: Mapping[str, Action]) -> Observation:
+    def act(self, actions: Mapping[str, Action]) -> Observation:
         return self.act_filter(
-            action,
+            actions,
             self.obs_space(),
         )
 

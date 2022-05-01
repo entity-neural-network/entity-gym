@@ -118,9 +118,9 @@ class Minefield(Environment):
 
         return self.observe(obs_filter)
 
-    def act(self, action: Mapping[str, Action]) -> Observation:
+    def act(self, actions: Mapping[str, Action]) -> Observation:
         return self.act_filter(
-            action,
+            actions,
             self.obs_space(),
         )
 

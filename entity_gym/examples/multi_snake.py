@@ -118,10 +118,10 @@ class MultiSnake(Environment):
             self._spawn_food(i)
         return self._observe()
 
-    def act(self, action: Mapping[str, Action]) -> Observation:
+    def act(self, actions: Mapping[str, Action]) -> Observation:
         game_over = False
         self.step += 1
-        move_action = action["move"]
+        move_action = actions["move"]
         self.last_scores = deepcopy(self.scores)
         food_to_spawn = []
         assert isinstance(move_action, CategoricalAction)

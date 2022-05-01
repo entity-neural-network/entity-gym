@@ -22,8 +22,8 @@ class ValidatingEnv(Environment):
         self._obs_space = env.obs_space()
         self._action_space = env.action_space()
 
-    def act(self, action: Mapping[ActionType, Action]) -> Observation:
-        obs = self.env.act(action)
+    def act(self, actions: Mapping[ActionType, Action]) -> Observation:
+        obs = self.env.act(actions)
         try:
             self._validate(obs)
         except AssertionError as e:

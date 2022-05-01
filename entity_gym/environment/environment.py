@@ -312,7 +312,7 @@ class Environment(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def act(self, action: Mapping[ActionType, Action]) -> Observation:
+    def act(self, actions: Mapping[ActionType, Action]) -> Observation:
         """
         Performs the given action and returns the resulting observation.
 
@@ -334,9 +334,9 @@ class Environment(ABC):
         raise NotImplementedError
 
     def act_filter(
-        self, action: Mapping[ActionType, Action], obs_filter: ObsSpace
+        self, actions: Mapping[ActionType, Action], obs_filter: ObsSpace
     ) -> Observation:
-        return self.filter_obs(self.act(action), obs_filter)
+        return self.filter_obs(self.act(actions), obs_filter)
 
     def close(self) -> None:
         pass

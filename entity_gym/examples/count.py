@@ -82,9 +82,9 @@ class Count(Environment):
             reward = 1.0
         return self.observe(obs_filter, None, done=True, reward=reward)
 
-    def act(self, action: Mapping[str, Action]) -> Observation:
+    def act(self, actions: Mapping[str, Action]) -> Observation:
         return self.act_filter(
-            action,
+            actions,
             self.obs_space(),
         )
 

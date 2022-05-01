@@ -80,9 +80,9 @@ class RockPaperScissors(Environment):
                     reward = 2.0
         return self.observe(obs_filter, done=True, reward=reward)
 
-    def act(self, action: Mapping[str, Action]) -> Observation:
+    def act(self, actions: Mapping[str, Action]) -> Observation:
         return self.act_filter(
-            action,
+            actions,
             self.obs_space(),
         )
 
