@@ -14,6 +14,11 @@ from entity_gym.environment import (
     SelectEntityActionMask,
     SelectEntityActionSpace,
 )
+from entity_gym.environment.environment import (
+    GlobalCategoricalAction,
+    GlobalCategoricalActionMask,
+    GlobalCategoricalActionSpace,
+)
 from entity_gym.environment.validator import ValidatingEnv
 
 
@@ -36,7 +41,30 @@ class CliRunner:
             received_action = False
             for action_name, action_mask in obs.actions.items():
                 action_def = actions[action_name]
-                if action_mask.actor_ids is not None:
+                if isinstance(action_mask, GlobalCategoricalActionMask):
+                    assert isinstance(action_def, GlobalCategoricalActionSpace)
+                    click.echo(
+                        f"Choose "
+                        + click.style(f"{action_name}", fg="green")
+                        + " ("
+                        + " ".join(
+                            f"{i}/{label}" for i, label in enumerate(action_def.choices)
+                        )
+                        + ")"
+                    )
+                    try:
+                        choice_id = int(input())
+                        received_action = True
+                    except KeyboardInterrupt:
+                        print()
+                        print("Exiting")
+                        return
+                    action[action_name] = GlobalCategoricalAction(
+                        index=choice_id,
+                        label=action_def.choices[choice_id],
+                    )
+                    continue
+                elif action_mask.actor_ids is not None:
                     actor_ids = action_mask.actor_ids
                 elif action_mask.actor_types is not None:
                     actor_ids = [
@@ -130,11 +158,11 @@ class CliRunner:
 def print_env(env: ValidatingEnv) -> None:
     click.secho(f"Environment: {env.env.__class__.__name__}", fg="white", bold=True)
     obs = env.obs_space()
-    # click.echo(click.style("Observation space", fg="white", bold=True))
-    # if len(obs.global_features) > 0:
-    #     click.echo(
-    #         click.style("Global features: ", fg="cyan") + ", ".join(obs.global_features)
-    #     )
+    click.echo(click.style("Observation space", fg="white", bold=True))
+    if len(obs.global_features) > 0:
+        click.echo(
+            click.style("Global features: ", fg="cyan") + ", ".join(obs.global_features)
+        )
     for label, entity in obs.entities.items():
         click.echo(
             click.style(f"Entity ", fg="cyan")
@@ -143,9 +171,10 @@ def print_env(env: ValidatingEnv) -> None:
             + ", ".join(entity.features)
         )
     acts = env.action_space()
-    # click.echo(click.style("Action space", fg="white", bold=True))
     for label, action in acts.items():
-        if isinstance(action, CategoricalActionSpace):
+        if isinstance(action, CategoricalActionSpace) or isinstance(
+            action, GlobalCategoricalActionSpace
+        ):
             click.echo(
                 click.style(f"Categorical", fg="cyan")
                 + click.style(f" {label}", fg="green")
@@ -167,7 +196,16 @@ def print_obs(
     click.secho(f"Step {step}", fg="white", bold=True)
     click.echo(click.style("Reward: ", fg="cyan") + f"{obs.reward}")
     click.echo(click.style("Total: ", fg="cyan") + f"{total_reward}")
-    click.echo(click.style("Entities", fg="cyan"))
+    if len(obs_filter.global_features) > 0:
+        click.echo(
+            click.style("Global features: ", fg="cyan")
+            + ", ".join(
+                f"{label}={value}"
+                for label, value in zip(obs_filter.global_features, obs.global_features)
+            )
+        )
+    if len(obs_filter.entities) > 0:
+        click.echo(click.style("Entities", fg="cyan"))
     entity_index = 0
     for entity_type, features in obs.features.items():
         for entity in range(len(features)):

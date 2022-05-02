@@ -35,7 +35,7 @@ class CherryPick(Environment):
 
     def obs_space(self) -> ObsSpace:
         return ObsSpace(
-            {
+            entities={
                 "Cherry": Entity(["quality"]),
                 "Player": Entity([]),
             }

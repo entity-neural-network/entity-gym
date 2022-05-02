@@ -26,7 +26,7 @@ class NotHotdog(Environment):
 
     def obs_space(self) -> ObsSpace:
         return ObsSpace(
-            {
+            entities={
                 "Player": Entity(["step"]),
                 "Object": Entity(["is_hotdog"]),
                 "Hotdog": Entity([]),

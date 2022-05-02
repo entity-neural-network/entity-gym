@@ -17,7 +17,7 @@ def obs_space_from_dataclasses(*dss: Type) -> ObsSpace:
                 key for key in ds.__dataclass_fields__.keys() if not key.startswith("_")
             ),
         )
-    return ObsSpace(entities)
+    return ObsSpace(entities=entities)
 
 
 def extract_features(

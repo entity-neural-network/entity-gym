@@ -69,11 +69,12 @@ class MultiSnake(Environment):
 
     def obs_space(cls) -> ObsSpace:
         return ObsSpace(
-            {
-                "SnakeHead": Entity(["x", "y", "color", "step"]),
+            global_features=["step"],
+            entities={
+                "SnakeHead": Entity(["x", "y", "color"]),
                 "SnakeBody": Entity(["x", "y", "color"]),
                 "Food": Entity(["x", "y", "color"]),
-            }
+            },
         )
 
     def action_space(cls) -> Dict[str, ActionSpace]:
@@ -179,6 +180,7 @@ class MultiSnake(Environment):
             return (color - color_offset) % self.num_snakes
 
         return Observation(
+            global_features=[self.step],
             features={
                 "SnakeHead": np.array(
                     [
@@ -186,7 +188,6 @@ class MultiSnake(Environment):
                             s.segments[-1][0],
                             s.segments[-1][1],
                             cycle_color(s.color),
-                            self.step,
                         ]
                         for s in self.snakes
                     ],

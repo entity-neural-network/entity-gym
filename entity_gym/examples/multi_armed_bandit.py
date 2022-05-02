@@ -1,18 +1,17 @@
 from dataclasses import dataclass
 from typing import Dict, Mapping
 
-import numpy as np
-
 from entity_gym.environment import (
     Action,
     ActionSpace,
-    CategoricalAction,
-    CategoricalActionMask,
-    CategoricalActionSpace,
-    Entity,
     Environment,
     Observation,
     ObsSpace,
+)
+from entity_gym.environment.environment import (
+    GlobalCategoricalAction,
+    GlobalCategoricalActionMask,
+    GlobalCategoricalActionSpace,
 )
 
 
@@ -23,15 +22,11 @@ class MultiArmedBandit(Environment):
     """
 
     def obs_space(cls) -> ObsSpace:
-        return ObsSpace(
-            {
-                "MultiArmedBandit": Entity(["step"]),
-            }
-        )
+        return ObsSpace(global_features=["step"])
 
     def action_space(cls) -> Dict[str, ActionSpace]:
         return {
-            "pull": CategoricalActionSpace(["A", "B", "C", "D", "E"]),
+            "pull": GlobalCategoricalActionSpace(["A", "B", "C", "D", "E"]),
         }
 
     def reset(self) -> Observation:
@@ -43,8 +38,10 @@ class MultiArmedBandit(Environment):
         self.step += 1
 
         a = actions["pull"]
-        assert isinstance(a, CategoricalAction), f"{a} is not a CategoricalAction"
-        if a.actions[0] == 0:
+        assert isinstance(
+            a, GlobalCategoricalAction
+        ), f"{a} is not a GlobalCategoricalAction"
+        if a.label == "A":
             reward = 1 / 32.0
         else:
             reward = 0
@@ -54,20 +51,10 @@ class MultiArmedBandit(Environment):
 
     def observe(self, done: bool = False, reward: float = 0) -> Observation:
         return Observation(
-            features={
-                "MultiArmedBandit": np.array(
-                    [
-                        [
-                            self.step,
-                        ]
-                    ],
-                    dtype=np.float32,
-                ),
-            },
+            global_features=[self.step],
             actions={
-                "pull": CategoricalActionMask(actor_ids=[0]),
+                "pull": GlobalCategoricalActionMask(),
             },
-            ids={"MultiArmedBandit": [0]},
             reward=reward,
             done=done,
         )

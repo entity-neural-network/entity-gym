@@ -2,32 +2,24 @@ import random
 from dataclasses import dataclass
 from typing import Dict, Mapping
 
-from entity_gym.dataclass_utils import extract_features, obs_space_from_dataclasses
 from entity_gym.environment import (
     Action,
     ActionSpace,
-    CategoricalAction,
-    CategoricalActionMask,
-    CategoricalActionSpace,
     Environment,
     Observation,
     ObsSpace,
 )
+from entity_gym.environment.environment import (
+    Entity,
+    GlobalCategoricalAction,
+    GlobalCategoricalActionMask,
+    GlobalCategoricalActionSpace,
+)
 
 
 @dataclass
-class Bit1:
+class Input:
     is_set: float
-
-
-@dataclass
-class Bit2:
-    is_set: float
-
-
-@dataclass
-class Output:
-    pass
 
 
 class Xor(Environment):
@@ -38,14 +30,18 @@ class Xor(Environment):
     """
 
     def obs_space(self) -> ObsSpace:
-        return obs_space_from_dataclasses(Output, Bit1, Bit2)
+        return ObsSpace(
+            global_features=["negate"],
+            entities={"Input": Entity(["is_set"])},
+        )
 
     def action_space(self) -> Dict[str, ActionSpace]:
-        return {"output": CategoricalActionSpace(["0", "1"])}
+        return {"output": GlobalCategoricalActionSpace(["0", "1"])}
 
     def reset_filter(self, obs_space: ObsSpace) -> Observation:
-        self.bit1 = Bit1(random.choice([0.0, 1.0]))
-        self.bit2 = Bit2(random.choice([0.0, 1.0]))
+        self.bit1 = random.choice([0.0, 1.0])
+        self.bit2 = random.choice([0.0, 1.0])
+        self.negate = random.choice([0.0, 1.0])
         return self.observe(obs_space)
 
     def reset(self) -> Observation:
@@ -55,13 +51,12 @@ class Xor(Environment):
         self, action: Mapping[str, Action], obs_filter: ObsSpace
     ) -> Observation:
         reward = 0.0
-        for action_name, a in action.items():
-            assert isinstance(a, CategoricalAction)
-            if action_name == "output":
-                if a.actions[0] == 0 and self.bit1.is_set == self.bit2.is_set:
-                    reward = 1.0
-                elif a.actions[0] == 1 and self.bit1.is_set != self.bit2.is_set:
-                    reward = 1.0
+        a = action["output"]
+        assert isinstance(a, GlobalCategoricalAction)
+        if a.index == self.negate and self.bit1 == self.bit2:
+            reward = 1.0
+        elif a.index == 1.0 - self.negate and self.bit1 != self.bit2:
+            reward = 1.0
 
         return self.observe(obs_filter, done=True, reward=reward)
 
@@ -75,18 +70,11 @@ class Xor(Environment):
         self, obs_filter: ObsSpace, done: bool = False, reward: float = 0.0
     ) -> Observation:
         return Observation(
-            features=extract_features(
-                {
-                    "Output": [Output()],
-                    "Bit1": [self.bit1],
-                    "Bit2": [self.bit2],
-                },
-                obs_filter,
-            ),
-            actions={
-                "output": CategoricalActionMask(actor_ids=[0]),
-            },
-            ids={"Output": [0], "Bit1": [1], "Bit2": [2]},
             reward=reward,
             done=done,
+            features={"Input": [[self.bit1], [self.bit2]]},
+            global_features=[self.negate],
+            actions={
+                "output": GlobalCategoricalActionMask(),
+            },
         )

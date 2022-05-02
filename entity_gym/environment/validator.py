@@ -75,6 +75,12 @@ class ValidatingEnv(Environment):
                     entity_features
                 ), f"Length of ids of entity of type '{entity_type}' does not match length of features: {len(obs.ids[entity_type])} != {len(entity_features)}"
 
+        # Validate global features
+        if len(obs.global_features) != len(self._obs_space.global_features):
+            raise AssertionError(
+                f"Length of global features does not match length of global features in observation space: {len(obs.global_features)} != {len(self._obs_space.global_features)}"
+            )
+
         # Validate ids
         previous_ids = set()
         for entity_type, entity_ids in obs.ids.items():

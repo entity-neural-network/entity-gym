@@ -1,4 +1,15 @@
 [[package]]
+name = "click"
+version = "8.1.3"
+description = "Composable command line interface toolkit"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+colorama = {version = "*", markers = "platform_system == \"Windows\""}
+
+[[package]]
 name = "cloudpickle"
 version = "2.0.0"
 description = "Extended pickling support for Python objects"
@@ -44,7 +55,7 @@ python-versions = ">=3.8"
 
 [[package]]
 name = "ragged-buffer"
-version = "0.3.7"
+version = "0.3.8"
 description = "Efficient RaggedBuffer datatype that implements 3D arrays with variable-length 2nd dimension."
 category = "main"
 optional = false
@@ -55,7 +66,7 @@ numpy = ">=1.21,<2.0"
 
 [[package]]
 name = "tqdm"
-version = "4.63.1"
+version = "4.64.0"
 description = "Fast, Extensible Progress Meter"
 category = "main"
 optional = false
@@ -67,14 +78,19 @@ colorama = {version = "*", markers = "platform_system == \"Windows\""}
 [package.extras]
 dev = ["py-make (>=0.1.0)", "twine", "wheel"]
 notebook = ["ipywidgets (>=6)"]
+slack = ["slack-sdk"]
 telegram = ["requests"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.10"
-content-hash = "082c6006d5b26bc1385395891bebaf55dde0ed169e2b9deb0fcc2ab50cba9e87"
+content-hash = "fad959cb41859127b4cffa7b5144397656a0991c7b13afc16ad5707b24ec718b"
 
 [metadata.files]
+click = [
+    {file = "click-8.1.3-py3-none-any.whl", hash = "sha256:bb4d8133cb15a609f44e8213d9b391b0809795062913b383c62be0ee95b1db48"},
+    {file = "click-8.1.3.tar.gz", hash = "sha256:7682dc8afb30297001674575ea00d1814d808d6a36af415a82bd481d37ba7b8e"},
+]
 cloudpickle = [
     {file = "cloudpickle-2.0.0-py3-none-any.whl", hash = "sha256:6b2df9741d06f43839a3275c4e6632f7df6487a1f181f5f46a052d3c917c3d11"},
     {file = "cloudpickle-2.0.0.tar.gz", hash = "sha256:5cd02f3b417a783ba84a4ec3e290ff7929009fe51f6405423cfccfadd43ba4a4"},
@@ -146,22 +162,22 @@ numpy = [
     {file = "numpy-1.22.3.zip", hash = "sha256:dbc7601a3b7472d559dc7b933b18b4b66f9aa7452c120e87dfb33d02008c8a18"},
 ]
 ragged-buffer = [
-    {file = "ragged_buffer-0.3.7-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:7d66de16710a09611577560787acce43aa8a556ade0af7323f121461765025db"},
-    {file = "ragged_buffer-0.3.7-cp310-none-win_amd64.whl", hash = "sha256:8ef175c84a66f6133866b5a3c266f8a9da569d16405eaa4b8f067b26c11c51ca"},
-    {file = "ragged_buffer-0.3.7-cp36-cp36m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:b733912269f80dcc4f07ba75c625322239215992c8753788da5acb8cf1e02d8f"},
-    {file = "ragged_buffer-0.3.7-cp37-cp37m-macosx_10_7_x86_64.whl", hash = "sha256:c89e53c9f58d911a022f843d4bc9e8f5311898d6ab18c29c6165529b6b737d25"},
-    {file = "ragged_buffer-0.3.7-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:101a256f9797922c3e6b3f4e125311e1f60ef25791b77b26e37ab1e1f793a31f"},
-    {file = "ragged_buffer-0.3.7-cp37-none-win_amd64.whl", hash = "sha256:de95b25cea15a2d18acc3e49f0ac2c693eb4098fecdc43bf81a663430c8d707d"},
-    {file = "ragged_buffer-0.3.7-cp38-cp38-macosx_10_7_x86_64.whl", hash = "sha256:8ffb25c91b2dafbf455ca3948f14137b3a20b4e110cc7f8800307fa1a9d38cc6"},
-    {file = "ragged_buffer-0.3.7-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:31a3ef16ba336546e731c7d76cdd126ea6ef7e6da50399124222f368a8cc89cc"},
-    {file = "ragged_buffer-0.3.7-cp38-none-win_amd64.whl", hash = "sha256:e3372816d5733f6c5d435c7ef65a66bc7e13cd1de2711fc19da5b6a79d903819"},
-    {file = "ragged_buffer-0.3.7-cp39-cp39-macosx_10_7_x86_64.whl", hash = "sha256:e575b13501a5f44fd60a41067818c986e0b1aca9ef21b7093f01f233e10bb9ca"},
-    {file = "ragged_buffer-0.3.7-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:15c1ebab26c4c7b8e5fef1ea2fbeb1de376f1afbd0f0810d9f30860caa4f8285"},
-    {file = "ragged_buffer-0.3.7-cp39-none-win_amd64.whl", hash = "sha256:edef89ddda66804c825876fb9b5642de7e1a24b5ac17bda2955eaba161629d7f"},
-    {file = "ragged_buffer-0.3.7-pp37-pypy37_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:ec97f9e80c32b75f6fada76e476ea81629b9a2918a97467489cb28c78ac75d68"},
-    {file = "ragged_buffer-0.3.7.tar.gz", hash = "sha256:ff9fe024db3d71fd467e6069ab8491f1e188a999a98c54211b719cac2dd1cc2b"},
+    {file = "ragged_buffer-0.3.8-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:13954ac2cbbfe9bd791fa4afc08eb2afc3348e2ab26c2ebfe8a81dcd468f2312"},
+    {file = "ragged_buffer-0.3.8-cp310-none-win_amd64.whl", hash = "sha256:13aa6d1d2c1e1e1db3fd4cbb4676be7953c84cb00e2f50886e9f2b8ef945ac0d"},
+    {file = "ragged_buffer-0.3.8-cp36-cp36m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:7a73b0b38332b7fcfde48d49ec34058df809fa52c64c746aaa884d18a7575d15"},
+    {file = "ragged_buffer-0.3.8-cp37-cp37m-macosx_10_7_x86_64.whl", hash = "sha256:7e13429dceeb007a646c2b165130a70a64239aa6e41793879e84dbb47fab4f95"},
+    {file = "ragged_buffer-0.3.8-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:494514e69661e4484aa011458c1cea1f5f433aa78469ad718aecdc9020d09652"},
+    {file = "ragged_buffer-0.3.8-cp37-none-win_amd64.whl", hash = "sha256:e58ac8e6793b99e8f5300cb749e695bc012948c5a380fdaef466d6f04f16a6a3"},
+    {file = "ragged_buffer-0.3.8-cp38-cp38-macosx_10_7_x86_64.whl", hash = "sha256:aa6a324eac66db7fb7adc4b17a408709f5bb22bc1a13768b755fe78f2d1e75d2"},
+    {file = "ragged_buffer-0.3.8-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:b960ba1f0150e0fe4b1c22a34bc6655ce8ccbcbc84e3a7cbc94c9476a1326836"},
+    {file = "ragged_buffer-0.3.8-cp38-none-win_amd64.whl", hash = "sha256:69673dee4c0163cd00605e40b527bcf64ddcc492a46c0b67162f12f11322ad53"},
+    {file = "ragged_buffer-0.3.8-cp39-cp39-macosx_10_7_x86_64.whl", hash = "sha256:59c7a73001870e7c8043dbf431c1937f9aad50aa7a053c0fbef1a9d17aeed5bb"},
+    {file = "ragged_buffer-0.3.8-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:0798e43168897d583ff5cf61722a3d97d45be72f9e96a6d4c166e663a33085cc"},
+    {file = "ragged_buffer-0.3.8-cp39-none-win_amd64.whl", hash = "sha256:a093fffa9238f81ef4cf726cf248d4bf01572c039d702d01a273500917aaec9c"},
+    {file = "ragged_buffer-0.3.8-pp37-pypy37_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:fd1f5fbe11fd28b05343e77b526173d5b3c62d7b0f54ea6ab7aca9fded357964"},
+    {file = "ragged_buffer-0.3.8.tar.gz", hash = "sha256:74a3e940298a7cc3b8aa444f709624f621f1197b065d55e015f55a55194f581c"},
 ]
 tqdm = [
-    {file = "tqdm-4.63.1-py2.py3-none-any.whl", hash = "sha256:6461b009d6792008d0000e1b0c7ca50195ec78c0e808a3a6b668a56a3236c3a5"},
-    {file = "tqdm-4.63.1.tar.gz", hash = "sha256:4230a49119a416c88cc47d0d2d32d5d90f1a282d5e497d49801950704e49863d"},
+    {file = "tqdm-4.64.0-py2.py3-none-any.whl", hash = "sha256:74a2cdefe14d11442cedf3ba4e21a3b84ff9a2dbdc6cfae2c34addb2a14a5ea6"},
+    {file = "tqdm-4.64.0.tar.gz", hash = "sha256:40be55d30e200777a307a7585aee69e4eabb46b4ec6a4b4a5f2d9f11e7d5408d"},
 ]

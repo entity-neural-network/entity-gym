@@ -70,7 +70,7 @@ def test_batch_obs_entities() -> None:
     """
 
     obs_space = ObsSpace(
-        {
+        entities={
             "entity1": Entity(["x", "y", "z"]),
             "rare": Entity(["x", "y", "z", "health", "thing"]),
         }
@@ -124,7 +124,7 @@ def test_batch_obs_select_entity_action() -> None:
     """
 
     obs_space = ObsSpace(
-        {
+        entities={
             "entity1": Entity(["x", "y", "z"]),
             "entity2": Entity(["x", "y", "z"]),
             "entity3": Entity(["x", "y", "z"]),
@@ -238,7 +238,7 @@ def test_batch_obs_categorical_action() -> None:
     """
 
     obs_space = ObsSpace(
-        {
+        entities={
             "entity1": Entity(["x", "y", "z"]),
             "entity2": Entity(["x", "y", "z"]),
             "entity3": Entity(["x", "y", "z"]),

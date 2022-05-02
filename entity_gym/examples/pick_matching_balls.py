@@ -42,7 +42,7 @@ class PickMatchingBalls(Environment):
 
     def obs_space(self) -> ObsSpace:
         return ObsSpace(
-            {
+            entities={
                 "Ball": Entity(
                     # TODO: better support for categorical features
                     [

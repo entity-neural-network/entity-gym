@@ -34,7 +34,7 @@ class MoveToOrigin(Environment):
 
     def obs_space(cls) -> ObsSpace:
         return ObsSpace(
-            {
+            entities={
                 "Spaceship": Entity(
                     ["x_pos", "y_pos", "x_velocity", "y_velocity", "step"]
                 ),

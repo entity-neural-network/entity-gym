@@ -36,7 +36,7 @@ class MineSweeper(Environment):
 
     def obs_space(cls) -> ObsSpace:
         return ObsSpace(
-            {
+            entities={
                 "Mine": Entity(features=["x", "y"]),
                 "Robot": Entity(features=["x", "y"]),
                 "Orbital Cannon": Entity(["cooldown"]),
@@ -64,7 +64,7 @@ class MineSweeper(Environment):
     def observe(self) -> Observation:
         done = len(self.mines) == 0 or len(self.robots) == 0
         reward = 1.0 if len(self.mines) == 0 else 0.0
-        return Observation.from_entity_obs(
+        return Observation(
             entities={
                 "Mine": EntityObs(
                     features=self.mines,

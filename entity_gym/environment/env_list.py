@@ -9,9 +9,12 @@ from entity_gym.environment.environment import (
     ActionSpace,
     ActionType,
     CategoricalAction,
+    CategoricalActionMask,
     CategoricalActionSpace,
     EntityID,
     Environment,
+    GlobalCategoricalAction,
+    GlobalCategoricalActionSpace,
     Observation,
     ObsSpace,
     SelectEntityAction,
@@ -44,11 +47,22 @@ class EnvList(VecEnv):
         self, actions: Mapping[str, RaggedBufferI64], obs_space: ObsSpace
     ) -> VecObs:
         observations = []
-        action_space = self.action_space()
+        action_spaces = self.action_space()
         for i, env in enumerate(self.envs):
             _actions: Dict[ActionType, Action] = {}
             for atype, action in actions.items():
+                action_space = action_spaces[atype]
+                if isinstance(action_space, GlobalCategoricalActionSpace):
+                    aindex = action[i].as_array()[0, 0]
+                    _actions[atype] = GlobalCategoricalAction(
+                        index=aindex,
+                        label=action_space.choices[aindex],
+                    )
+                    continue
                 mask = self.last_obs[i].actions[atype]
+                assert isinstance(mask, SelectEntityActionMask) or isinstance(
+                    mask, CategoricalActionMask
+                )
                 if mask.actor_ids is not None:
                     actors = mask.actor_ids
                 elif mask.actor_types is not None:
@@ -59,12 +73,12 @@ class EnvList(VecEnv):
                     actors = []
                     for ids in self.last_obs[i].ids.values():
                         actors.extend(ids)
-                if isinstance(action_space[atype], CategoricalActionSpace):
+                if isinstance(action_spaces[atype], CategoricalActionSpace):
                     _actions[atype] = CategoricalAction(
                         actors=actors,
                         actions=action[i].as_array().reshape(-1),
                     )
-                elif isinstance(action_space[atype], SelectEntityActionSpace):
+                elif isinstance(action_spaces[atype], SelectEntityActionSpace):
                     assert isinstance(mask, SelectEntityActionMask)
                     if mask.actee_types is not None:
                         index_to_actee: List[EntityID] = []
@@ -88,7 +102,7 @@ class EnvList(VecEnv):
                     )
                 else:
                     raise NotImplementedError(
-                        f"Action space type {type(action_space[atype])} not supported"
+                        f"Action space type {type(action_spaces[atype])} not supported"
                     )
 
             obs = env.act_filter(_actions, obs_space)
