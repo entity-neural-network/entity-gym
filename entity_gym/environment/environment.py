@@ -335,7 +335,7 @@ class SelectEntityAction:
 @dataclass
 class GlobalCategoricalAction:
     index: int
-    label: ActionType
+    choice: ActionType
 
     def items(self) -> Generator[Tuple[None, int], None, None]:
         yield None, self.index

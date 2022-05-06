@@ -61,7 +61,7 @@ class CliRunner:
                         return
                     action[action_name] = GlobalCategoricalAction(
                         index=choice_id,
-                        label=action_def.choices[choice_id],
+                        choice=action_def.choices[choice_id],
                     )
                     continue
                 elif action_mask.actor_ids is not None:
@@ -158,7 +158,6 @@ class CliRunner:
 def print_env(env: ValidatingEnv) -> None:
     click.secho(f"Environment: {env.env.__class__.__name__}", fg="white", bold=True)
     obs = env.obs_space()
-    click.echo(click.style("Observation space", fg="white", bold=True))
     if len(obs.global_features) > 0:
         click.echo(
             click.style("Global features: ", fg="cyan") + ", ".join(obs.global_features)

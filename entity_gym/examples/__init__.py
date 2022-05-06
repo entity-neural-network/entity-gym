@@ -12,6 +12,7 @@ from entity_gym.examples.multi_snake import MultiSnake
 from entity_gym.examples.not_hotdog import NotHotdog
 from entity_gym.examples.pick_matching_balls import PickMatchingBalls
 from entity_gym.examples.rock_paper_scissors import RockPaperScissors
+from entity_gym.examples.tutorial import TreasureHunt
 from entity_gym.examples.xor import Xor
 
 ENV_REGISTRY: Dict[str, Type[Environment]] = {
@@ -27,4 +28,5 @@ ENV_REGISTRY: Dict[str, Type[Environment]] = {
     "FloorIsLava": FloorIsLava,
     "MineSweeper": MineSweeper,
     "RockPaperScissors": RockPaperScissors,
+    "TreasureHunt": TreasureHunt,
 }

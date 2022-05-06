@@ -56,7 +56,7 @@ class EnvList(VecEnv):
                     aindex = action[i].as_array()[0, 0]
                     _actions[atype] = GlobalCategoricalAction(
                         index=aindex,
-                        label=action_space.choices[aindex],
+                        choice=action_space.choices[aindex],
                     )
                     continue
                 mask = self.last_obs[i].actions[atype]
