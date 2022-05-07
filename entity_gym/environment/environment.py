@@ -318,6 +318,7 @@ class Observation:
 class CategoricalAction:
     actors: Sequence[EntityID]
     actions: npt.NDArray[np.int64]
+    probs: Optional[npt.NDArray[np.float32]] = None
 
     def items(self) -> Generator[Tuple[EntityID, int], None, None]:
         yield from zip(self.actors, self.actions)
@@ -327,6 +328,7 @@ class CategoricalAction:
 class SelectEntityAction:
     actors: Sequence[EntityID]
     actees: Sequence[EntityID]
+    probs: Optional[npt.NDArray[np.float32]] = None
 
     def items(self) -> Generator[Tuple[EntityID, EntityID], None, None]:
         yield from zip(self.actors, self.actees)
@@ -336,6 +338,7 @@ class SelectEntityAction:
 class GlobalCategoricalAction:
     index: int
     choice: ActionType
+    probs: Optional[npt.NDArray[np.float32]] = None
 
     def items(self) -> Generator[Tuple[None, int], None, None]:
         yield None, self.index

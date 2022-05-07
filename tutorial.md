@@ -127,13 +127,13 @@ class TreasureHunt(Environment):
         # Adjust the player's position according to the chosen action.
         action = actions["move"]
         assert isinstance(action, GlobalCategoricalAction)
-        if action.choice == "up":
+        if action.choice == "up" and self.y_pos < 10:
             self.y_pos += 1
-        elif action.choice == "down":
+        elif action.choice == "down" and self.y_pos > -10:
             self.y_pos -= 1
-        elif action.choice == "left":
+        elif action.choice == "left" and self.x_pos > -10:
             self.x_pos -= 1
-        elif action.choice == "right":
+        elif action.choice == "right" and self.x_pos < 10:
             self.x_pos += 1
         return self._observe()
 
@@ -224,13 +224,13 @@ class TreasureHunt(Environment):
     def act(self, actions: Mapping[ActionType, Action]) -> Observation:
         action = actions["move"]
         assert isinstance(action, GlobalCategoricalAction)
-        if action.choice == "up":
+        if action.choice == "up" and self.y_pos < 10:
             self.y_pos += 1
-        elif action.choice == "down":
+        elif action.choice == "down" and self.y_pos > -10:
             self.y_pos -= 1
-        elif action.choice == "left":
+        elif action.choice == "left" and self.x_pos > -10:
             self.x_pos -= 1
-        elif action.choice == "right":
+        elif action.choice == "right" and self.x_pos < 10:
             self.x_pos += 1
 
         reward = 0.0

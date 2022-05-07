@@ -1,8 +1,9 @@
-from typing import Dict
+from typing import Dict, Optional
 
 import click
 import numpy as np
 
+from entity_gym.agent import Agent
 from entity_gym.environment import (
     Action,
     CategoricalAction,
@@ -23,8 +24,9 @@ from entity_gym.environment.validator import ValidatingEnv
 
 
 class CliRunner:
-    def __init__(self, env: Environment) -> None:
+    def __init__(self, env: Environment, agent: Optional[Agent] = None) -> None:
         self.env = ValidatingEnv(env)
+        self.agent = agent
 
     def run(self) -> None:
         print_env(self.env)
@@ -36,24 +38,49 @@ class CliRunner:
         total_reward = obs.reward
         step = 0
         while not obs.done:
-            print_obs(step, obs, total_reward, obs_space)
+            if self.agent is None:
+                agent_action: Optional[Dict[str, Action]] = None
+                agent_prediction: Optional[float] = None
+            else:
+                agent_action, agent_prediction = self.agent.act(obs)
+            print_obs(step, obs, total_reward, obs_space, agent_prediction)
             action: Dict[str, Action] = {}
             received_action = False
             for action_name, action_mask in obs.actions.items():
                 action_def = actions[action_name]
                 if isinstance(action_mask, GlobalCategoricalActionMask):
                     assert isinstance(action_def, GlobalCategoricalActionSpace)
+                    if agent_action is None:
+                        choices = " ".join(
+                            f"{i}/{label}" for i, label in enumerate(action_def.choices)
+                        )
+                    else:
+                        probs = agent_action[action_name].probs
+                        assert probs is not None
+                        choice_id = agent_action[action_name].index  # type: ignore
+                        choices = " ".join(
+                            click.style(
+                                f"{i}/{label} ",
+                                fg="yellow" if i == choice_id else None,
+                                bold=i == choice_id,
+                            )
+                            + click.style(f"{100 * prob:.1f}%", fg="yellow")
+                            for i, (label, prob) in enumerate(
+                                zip(action_def.choices, probs)
+                            )
+                        )
+
                     click.echo(
                         f"Choose "
                         + click.style(f"{action_name}", fg="green")
-                        + " ("
-                        + " ".join(
-                            f"{i}/{label}" for i, label in enumerate(action_def.choices)
-                        )
-                        + ")"
+                        + f" ({choices})"
                     )
                     try:
-                        choice_id = int(input())
+                        inp = input()
+                        if inp == "" and agent_action is not None:
+                            choice_id = agent_action[action_name].index  # type: ignore
+                        else:
+                            choice_id = int(inp)
                         received_action = True
                     except KeyboardInterrupt:
                         print()
@@ -190,11 +217,20 @@ def print_env(env: ValidatingEnv) -> None:
 
 
 def print_obs(
-    step: int, obs: Observation, total_reward: float, obs_filter: ObsSpace
+    step: int,
+    obs: Observation,
+    total_reward: float,
+    obs_filter: ObsSpace,
+    predicted_return: Optional[float] = None,
 ) -> None:
     click.secho(f"Step {step}", fg="white", bold=True)
     click.echo(click.style("Reward: ", fg="cyan") + f"{obs.reward}")
     click.echo(click.style("Total: ", fg="cyan") + f"{total_reward}")
+    if predicted_return is not None:
+        click.echo(
+            click.style("Predicted return: ", fg="cyan")
+            + click.style(f"{predicted_return:.3e}", fg="yellow")
+        )
     if len(obs_filter.global_features) > 0:
         click.echo(
             click.style("Global features: ", fg="cyan")
