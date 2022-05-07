@@ -17,8 +17,8 @@ import numpy as np
 import numpy.typing as npt
 
 EntityID = Any
-EntityType = str
-ActionType = str
+EntityName = str
+ActionName = str
 
 
 @dataclass
@@ -54,7 +54,7 @@ class CategoricalActionMask:
     If None, all entities can perform the action.
     """
 
-    actor_types: Optional[Sequence[EntityType]] = None
+    actor_types: Optional[Sequence[EntityName]] = None
     """
     The types of the entities that can perform the action.
     If None, all entities can perform the action.
@@ -99,13 +99,13 @@ class SelectEntityActionMask:
     If None, all entities can perform the action.
     """
 
-    actor_types: Optional[Sequence[EntityType]] = None
+    actor_types: Optional[Sequence[EntityName]] = None
     """
     The types of the entities that can perform the action.
     If None, all entities can perform the action.
     """
 
-    actee_types: Optional[Sequence[EntityType]] = None
+    actee_types: Optional[Sequence[EntityName]] = None
     """
     The types of entities that can be selected by each actor.
     If None, all entities types can be selected by each actor.
@@ -146,7 +146,7 @@ class Entity:
 @dataclass
 class ObsSpace:
     global_features: List[str] = field(default_factory=list)
-    entities: Dict[EntityType, Entity] = field(default_factory=dict)
+    entities: Dict[EntityName, Entity] = field(default_factory=dict)
 
 
 @dataclass
@@ -172,13 +172,13 @@ class Observation:
 
     global_features: Union[npt.NDArray[np.float32], Sequence[float]]
     features: Mapping[
-        EntityType, Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
+        EntityName, Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
     ]
-    actions: Mapping[ActionType, ActionMask]
+    actions: Mapping[ActionName, ActionMask]
     done: bool
     reward: float
-    ids: Mapping[EntityType, Sequence[EntityID]] = field(default_factory=dict)
-    visible: Mapping[EntityType, Union[npt.NDArray[np.bool_], Sequence[bool]]] = field(
+    ids: Mapping[EntityName, Sequence[EntityID]] = field(default_factory=dict)
+    visible: Mapping[EntityName, Union[npt.NDArray[np.bool_], Sequence[bool]]] = field(
         default_factory=dict
     )
     metrics: Dict[str, float] = field(default_factory=dict)
@@ -189,19 +189,19 @@ class Observation:
         done: bool,
         reward: float,
         visible: Optional[
-            Mapping[EntityType, Union[npt.NDArray[np.bool_], Sequence[bool]]]
+            Mapping[EntityName, Union[npt.NDArray[np.bool_], Sequence[bool]]]
         ] = None,
-        entities: Optional[Mapping[EntityType, Optional[EntityObs]]] = None,
+        entities: Optional[Mapping[EntityName, Optional[EntityObs]]] = None,
         features: Optional[
             Mapping[
-                EntityType, Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
+                EntityName, Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
             ]
         ] = None,
-        ids: Optional[Mapping[EntityType, Sequence[EntityID]]] = None,
+        ids: Optional[Mapping[EntityName, Sequence[EntityID]]] = None,
         global_features: Optional[
             Union[npt.NDArray[np.float32], Sequence[float]]
         ] = None,
-        actions: Optional[Mapping[ActionType, ActionMask]] = None,
+        actions: Optional[Mapping[ActionName, ActionMask]] = None,
         metrics: Optional[Dict[str, float]] = None,
     ) -> None:
         self.global_features = global_features if global_features is not None else []
@@ -237,7 +237,7 @@ class Observation:
         )
 
     def _actor_indices(
-        self, atype: ActionType, obs_space: ObsSpace
+        self, atype: ActionName, obs_space: ObsSpace
     ) -> npt.NDArray[np.int64]:
         action = self.actions[atype]
         if isinstance(action, GlobalCategoricalActionMask):
@@ -262,7 +262,7 @@ class Observation:
             )
 
     def _actee_indices(
-        self, atype: ActionType, obs_space: ObsSpace
+        self, atype: ActionName, obs_space: ObsSpace
     ) -> npt.NDArray[np.int64]:
         action = self.actions[atype]
         assert isinstance(action, SelectEntityActionMask)
@@ -306,7 +306,7 @@ class Observation:
                 self._index_to_id.extend(ids)
         return self._index_to_id
 
-    def num_entities(self, entity: EntityType) -> int:
+    def num_entities(self, entity: EntityName) -> int:
         feats = self.features[entity]
         if isinstance(feats, np.ndarray):
             return feats.shape[0]
@@ -337,7 +337,7 @@ class SelectEntityAction:
 @dataclass
 class GlobalCategoricalAction:
     index: int
-    choice: ActionType
+    choice: ActionName
     probs: Optional[npt.NDArray[np.float32]] = None
 
     def items(self) -> Generator[Tuple[None, int], None, None]:
@@ -374,7 +374,7 @@ class Environment(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def act(self, actions: Mapping[ActionType, Action]) -> Observation:
+    def act(self, actions: Mapping[ActionName, Action]) -> Observation:
         """
         Performs the given action and returns the resulting observation.
 
@@ -396,7 +396,7 @@ class Environment(ABC):
         raise NotImplementedError
 
     def act_filter(
-        self, actions: Mapping[ActionType, Action], obs_filter: ObsSpace
+        self, actions: Mapping[ActionName, Action], obs_filter: ObsSpace
     ) -> Observation:
         return self.filter_obs(self.act(actions), obs_filter)
 
@@ -406,7 +406,7 @@ class Environment(ABC):
     def filter_obs(self, obs: Observation, obs_filter: ObsSpace) -> Observation:
         selectors = self._compile_feature_filter(obs_filter)
         features: Dict[
-            EntityType, Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
+            EntityName, Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
         ] = {}
         for etype, feats in obs.features.items():
             selector = selectors[etype]

@@ -11,8 +11,8 @@ from ragged_buffer import RaggedBufferI64
 
 from entity_gym.environment.env_list import EnvList
 from entity_gym.environment.environment import (
+    ActionName,
     ActionSpace,
-    ActionType,
     Environment,
     Observation,
     ObsSpace,
@@ -210,5 +210,5 @@ class ParallelEnvList(VecEnv):
     def obs_space(self) -> ObsSpace:
         return self._obs_space
 
-    def action_space(self) -> Dict[ActionType, ActionSpace]:
+    def action_space(self) -> Dict[ActionName, ActionSpace]:
         return self._action_space

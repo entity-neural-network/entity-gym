@@ -43,7 +43,7 @@ class MineSweeper(Environment):
             }
         )
 
-    def action_space(cls) -> Dict[ActionType, ActionSpace]:
+    def action_space(cls) -> Dict[ActionName, ActionSpace]:
         return {
             "Move": CategoricalActionSpace(
                 ["Up", "Down", "Left", "Right", "Defuse Mines"],
@@ -102,7 +102,7 @@ class MineSweeper(Environment):
             reward=reward,
         )
 
-    def act(self, actions: Mapping[ActionType, Action]) -> Observation:
+    def act(self, actions: Mapping[ActionName, Action]) -> Observation:
         fire = actions["Fire Orbital Cannon"]
         assert isinstance(fire, SelectEntityAction)
         remove_robot = None

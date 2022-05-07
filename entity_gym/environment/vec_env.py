@@ -8,10 +8,10 @@ import numpy.typing as npt
 from ragged_buffer import RaggedBufferBool, RaggedBufferF32, RaggedBufferI64
 
 from entity_gym.environment.environment import (
+    ActionName,
     ActionSpace,
-    ActionType,
     CategoricalActionSpace,
-    EntityType,
+    EntityName,
     GlobalCategoricalActionSpace,
     Observation,
     ObsSpace,
@@ -147,10 +147,10 @@ class VecObs:
     A batch of observations from a vectorized environment.
     """
 
-    features: Dict[EntityType, RaggedBufferF32]
+    features: Dict[EntityName, RaggedBufferF32]
     # Optional mask to hide specific entities from the policy but not the value function
-    visible: Dict[EntityType, RaggedBufferBool]
-    action_masks: Dict[ActionType, VecActionMask]
+    visible: Dict[EntityName, RaggedBufferBool]
+    action_masks: Dict[ActionName, VecActionMask]
     reward: npt.NDArray[np.float32]
     done: npt.NDArray[np.bool_]
     metrics: Dict[str, Metric]
@@ -217,7 +217,7 @@ class VecEnv(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def action_space(self) -> Dict[ActionType, ActionSpace]:
+    def action_space(self) -> Dict[ActionName, ActionSpace]:
         """
         Returns a dictionary mapping the name of actions to their action space.
         """
@@ -232,7 +232,7 @@ class VecEnv(ABC):
 
     @abstractmethod
     def act(
-        self, actions: Mapping[ActionType, RaggedBufferI64], obs_filter: ObsSpace
+        self, actions: Mapping[ActionName, RaggedBufferI64], obs_filter: ObsSpace
     ) -> VecObs:
         """
         Performs the given actions on the underlying environments and returns the resulting observations.
@@ -258,9 +258,9 @@ def batch_obs(
     """
     Converts a list of observations into a batch of observations.
     """
-    features: Dict[EntityType, RaggedBufferF32] = {}
-    visible: Dict[EntityType, RaggedBufferBool] = {}
-    action_masks: Dict[ActionType, VecActionMask] = {}
+    features: Dict[EntityName, RaggedBufferF32] = {}
+    visible: Dict[EntityName, RaggedBufferBool] = {}
+    action_masks: Dict[ActionName, VecActionMask] = {}
     reward = []
     done = []
     metrics = {}

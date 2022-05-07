@@ -47,7 +47,7 @@ class TreasureHunt(Environment):
             self.treasure.append(self._random_empty_pos())
         return self._observe()
 
-    def act(self, actions: Mapping[ActionType, Action]) -> Observation:
+    def act(self, actions: Mapping[ActionName, Action]) -> Observation:
         action = actions["move"]
         assert isinstance(action, GlobalCategoricalAction)
         if action.choice == "up" and self.y_pos < 10:

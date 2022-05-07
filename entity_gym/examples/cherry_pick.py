@@ -15,7 +15,7 @@ from entity_gym.environment import (
     SelectEntityActionMask,
     SelectEntityActionSpace,
 )
-from entity_gym.environment.environment import EntityType
+from entity_gym.environment.environment import EntityName
 
 
 @dataclass
@@ -58,7 +58,7 @@ class CherryPick(Environment):
 
     def observe(self) -> Observation:
         done = self.step == self.num_cherries // 2
-        ids: Dict[EntityType, List[EntityID]] = {
+        ids: Dict[EntityName, List[EntityID]] = {
             "Cherry": [("Cherry", a) for a in range(len(self.cherries))],
             "Player": ["Player"],
         }

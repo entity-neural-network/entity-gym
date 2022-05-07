@@ -6,7 +6,7 @@ import numpy as np
 from ragged_buffer import RaggedBufferF32, RaggedBufferI64
 
 from entity_gym.environment import ActionSpace, ObsSpace, VecEnv, VecObs
-from entity_gym.environment.environment import ActionType
+from entity_gym.environment.environment import ActionName
 from entity_gym.serialization.msgpack_ragged import (
     ragged_buffer_decode,
     ragged_buffer_encode,
@@ -181,7 +181,7 @@ class SampleRecordingVecEnv(VecEnv):
     def render(self, **kwargs: Any) -> np.ndarray:
         return self.inner.render(**kwargs)
 
-    def action_space(self) -> Dict[ActionType, ActionSpace]:
+    def action_space(self) -> Dict[ActionName, ActionSpace]:
         return self.inner.action_space()
 
     def obs_space(self) -> ObsSpace:

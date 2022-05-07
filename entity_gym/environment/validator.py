@@ -4,8 +4,8 @@ import numpy as np
 
 from entity_gym.environment.environment import (
     Action,
+    ActionName,
     ActionSpace,
-    ActionType,
     CategoricalActionMask,
     CategoricalActionSpace,
     Environment,
@@ -22,7 +22,7 @@ class ValidatingEnv(Environment):
         self._obs_space = env.obs_space()
         self._action_space = env.action_space()
 
-    def act(self, actions: Mapping[ActionType, Action]) -> Observation:
+    def act(self, actions: Mapping[ActionName, Action]) -> Observation:
         obs = self.env.act(actions)
         try:
             self._validate(obs)

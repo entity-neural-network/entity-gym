@@ -6,8 +6,8 @@ from ragged_buffer import RaggedBufferI64
 
 from entity_gym.environment.environment import (
     Action,
+    ActionName,
     ActionSpace,
-    ActionType,
     CategoricalAction,
     CategoricalActionMask,
     CategoricalActionSpace,
@@ -73,19 +73,19 @@ class EnvList(VecEnv):
     def obs_space(self) -> ObsSpace:
         return self._obs_space
 
-    def action_space(self) -> Dict[ActionType, ActionSpace]:
+    def action_space(self) -> Dict[ActionName, ActionSpace]:
         return self._action_space
 
 
 def action_index_to_actions(
     obs_space: ObsSpace,
-    action_spaces: Dict[ActionType, ActionSpace],
-    actions: Mapping[ActionType, RaggedBufferI64],
+    action_spaces: Dict[ActionName, ActionSpace],
+    actions: Mapping[ActionName, RaggedBufferI64],
     last_obs: Observation,
     index: int = 0,
-    probs: Optional[Dict[ActionType, npt.NDArray[np.float32]]] = None,
-) -> Dict[ActionType, Action]:
-    _actions: Dict[ActionType, Action] = {}
+    probs: Optional[Dict[ActionName, npt.NDArray[np.float32]]] = None,
+) -> Dict[ActionName, Action]:
+    _actions: Dict[ActionName, Action] = {}
     for atype, action in actions.items():
         action_space = action_spaces[atype]
         if isinstance(action_space, GlobalCategoricalActionSpace):

@@ -4,7 +4,7 @@ import numpy as np
 import numpy.typing as npt
 from ragged_buffer import RaggedBufferI64
 
-from entity_gym.environment.environment import ActionSpace, ActionType, ObsSpace
+from entity_gym.environment.environment import ActionName, ActionSpace, ObsSpace
 from entity_gym.environment.vec_env import Metric, VecEnv, VecObs
 
 
@@ -30,7 +30,7 @@ class AddMetricsWrapper(VecEnv):
         return self.track_metrics(self.env.reset(obs_config))
 
     def act(
-        self, actions: Mapping[ActionType, RaggedBufferI64], obs_filter: ObsSpace
+        self, actions: Mapping[ActionName, RaggedBufferI64], obs_filter: ObsSpace
     ) -> VecObs:
         return self.track_metrics(self.env.act(actions, obs_filter))
 
@@ -69,7 +69,7 @@ class AddMetricsWrapper(VecEnv):
         )
         return obs
 
-    def action_space(self) -> Dict[ActionType, ActionSpace]:
+    def action_space(self) -> Dict[ActionName, ActionSpace]:
         return self.env.action_space()
 
     def obs_space(self) -> ObsSpace:

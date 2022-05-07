@@ -15,7 +15,7 @@ from entity_gym.environment import (
     SelectEntityActionMask,
     SelectEntityActionSpace,
 )
-from entity_gym.environment.environment import ActionType
+from entity_gym.environment.environment import ActionName
 
 
 @dataclass
@@ -59,7 +59,7 @@ class PickMatchingBalls(Environment):
             }
         )
 
-    def action_space(self) -> Dict[ActionType, ActionSpace]:
+    def action_space(self) -> Dict[ActionName, ActionSpace]:
         return {"Pick Ball": SelectEntityActionSpace()}
 
     def reset(self) -> Observation:
@@ -114,7 +114,7 @@ class PickMatchingBalls(Environment):
             done=done,
         )
 
-    def act(self, actions: Mapping[ActionType, Action]) -> Observation:
+    def act(self, actions: Mapping[ActionName, Action]) -> Observation:
         action = actions["Pick Ball"]
         assert isinstance(action, SelectEntityAction)
         for selected_ball in action.actees:
