@@ -76,8 +76,8 @@ class Count(Environment):
         assert len(action) == 1
         a = action["count"]
         assert isinstance(a, CategoricalAction)
-        assert len(a.actions) == 1
-        choice = a.actions[0]
+        assert len(a.indices) == 1
+        choice = a.indices[0]
         if choice == self.count:
             reward = 1.0
         return self.observe(obs_filter, None, done=True, reward=reward)

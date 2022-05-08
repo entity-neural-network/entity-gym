@@ -41,7 +41,7 @@ class MultiArmedBandit(Environment):
         assert isinstance(
             a, GlobalCategoricalAction
         ), f"{a} is not a GlobalCategoricalAction"
-        if a.choice == "A":
+        if a.label == "A":
             reward = 1 / 32.0
         else:
             reward = 0

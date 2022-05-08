@@ -23,12 +23,18 @@ ActionName = str
 
 @dataclass
 class CategoricalActionSpace:
-    choices: List[str]
+    index_to_label: List[str]
+
+    def __len__(self) -> int:
+        return len(self.index_to_label)
 
 
 @dataclass
 class GlobalCategoricalActionSpace:
-    choices: List[str]
+    index_to_label: List[str]
+
+    def __len__(self) -> int:
+        return len(self.index_to_label)
 
 
 @dataclass
@@ -317,11 +323,16 @@ class Observation:
 @dataclass
 class CategoricalAction:
     actors: Sequence[EntityID]
-    actions: npt.NDArray[np.int64]
+    indices: npt.NDArray[np.int64]
+    index_to_label: List[str]
     probs: Optional[npt.NDArray[np.float32]] = None
 
+    @property
+    def labels(self) -> List[str]:
+        return [self.index_to_label[i] for i in self.indices]
+
     def items(self) -> Generator[Tuple[EntityID, int], None, None]:
-        yield from zip(self.actors, self.actions)
+        yield from zip(self.actors, self.indices)
 
 
 @dataclass
@@ -337,7 +348,7 @@ class SelectEntityAction:
 @dataclass
 class GlobalCategoricalAction:
     index: int
-    choice: ActionName
+    label: str
     probs: Optional[npt.NDArray[np.float32]] = None
 
     def items(self) -> Generator[Tuple[None, int], None, None]:

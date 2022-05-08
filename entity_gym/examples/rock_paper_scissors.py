@@ -73,9 +73,9 @@ class RockPaperScissors(Environment):
             assert isinstance(a, CategoricalAction)
             if action_name == "throw":
                 if (
-                    (a.actions[0] == 0 and self.opponent.scissors == 1.0)
-                    or (a.actions[0] == 1 and self.opponent.rock == 1.0)
-                    or (a.actions[0] == 2 and self.opponent.paper == 1.0)
+                    (a.indices[0] == 0 and self.opponent.scissors == 1.0)
+                    or (a.indices[0] == 1 and self.opponent.rock == 1.0)
+                    or (a.indices[0] == 2 and self.opponent.paper == 1.0)
                 ):
                     reward = 2.0
         return self.observe(obs_filter, done=True, reward=reward)

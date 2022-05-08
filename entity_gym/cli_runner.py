@@ -52,7 +52,8 @@ class CliRunner:
                     assert isinstance(action_def, GlobalCategoricalActionSpace)
                     if agent_action is None:
                         choices = " ".join(
-                            f"{i}/{label}" for i, label in enumerate(action_def.choices)
+                            f"{i}/{label}"
+                            for i, label in enumerate(action_def.index_to_label)
                         )
                     else:
                         probs = agent_action[action_name].probs
@@ -66,7 +67,7 @@ class CliRunner:
                             )
                             + click.style(f"{100 * prob:.1f}%", fg="yellow")
                             for i, (label, prob) in enumerate(
-                                zip(action_def.choices, probs)
+                                zip(action_def.index_to_label, probs)
                             )
                         )
 
@@ -88,7 +89,7 @@ class CliRunner:
                         return
                     action[action_name] = GlobalCategoricalAction(
                         index=choice_id,
-                        choice=action_def.choices[choice_id],
+                        label=action_def.index_to_label[choice_id],
                     )
                     continue
                 elif action_mask.actor_ids is not None:
@@ -111,7 +112,7 @@ class CliRunner:
                             + " ("
                             + " ".join(
                                 f"{i}/{label}"
-                                for i, label in enumerate(action_def.choices)
+                                for i, label in enumerate(action_def.index_to_label)
                             )
                             + ")"
                         )
@@ -124,14 +125,15 @@ class CliRunner:
                             return
                         if action_name not in action:
                             action[action_name] = CategoricalAction(
-                                actions=np.zeros(
-                                    (0, len(action_def.choices)), dtype=np.int64
+                                indices=np.zeros(
+                                    (0, len(action_def.index_to_label)), dtype=np.int64
                                 ),
+                                index_to_label=action_def.index_to_label,
                                 actors=[],
                             )
                         a = action[action_name]
                         assert isinstance(a, CategoricalAction)
-                        a.actions = np.array(list(a.actions) + [choice_id])
+                        a.indices = np.array(list(a.indices) + [choice_id])
                         a.actors = list(a.actors) + [actor_id]
                     elif isinstance(action_def, SelectEntityActionSpace):
                         assert isinstance(action_mask, SelectEntityActionMask)
@@ -205,7 +207,7 @@ def print_env(env: ValidatingEnv) -> None:
                 click.style(f"Categorical", fg="cyan")
                 + click.style(f" {label}", fg="green")
                 + click.style(f": ", fg="cyan")
-                + ", ".join(action.choices)
+                + ", ".join(action.index_to_label)
             )
         elif isinstance(action, SelectEntityActionSpace):
             click.echo(

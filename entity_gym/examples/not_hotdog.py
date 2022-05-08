@@ -50,7 +50,7 @@ class NotHotdog(Environment):
 
         a = actions["classify"]
         assert isinstance(a, CategoricalAction), f"{a} is not a CategoricalAction"
-        if a.actions[0] == self.is_hotdog:
+        if a.indices[0] == self.is_hotdog:
             reward = 1
         else:
             reward = 0

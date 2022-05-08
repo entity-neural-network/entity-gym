@@ -23,7 +23,7 @@ class TreasureHunt(Environment):
         # The `GlobalCategoricalActionSpace` allows the agent to choose from set of discrete actions.
         return {
             "move": GlobalCategoricalActionSpace(
-                choices=["up", "down", "left", "right"]
+                index_to_label=["up", "down", "left", "right"]
             )
         }
 
@@ -50,13 +50,13 @@ class TreasureHunt(Environment):
     def act(self, actions: Mapping[ActionName, Action]) -> Observation:
         action = actions["move"]
         assert isinstance(action, GlobalCategoricalAction)
-        if action.choice == "up" and self.y_pos < 10:
+        if action.label == "up" and self.y_pos < 10:
             self.y_pos += 1
-        elif action.choice == "down" and self.y_pos > -10:
+        elif action.label == "down" and self.y_pos > -10:
             self.y_pos -= 1
-        elif action.choice == "left" and self.x_pos > -10:
+        elif action.label == "left" and self.x_pos > -10:
             self.x_pos -= 1
-        elif action.choice == "right" and self.x_pos < 10:
+        elif action.label == "right" and self.x_pos < 10:
             self.x_pos += 1
 
         reward = 0.0

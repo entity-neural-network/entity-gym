@@ -79,9 +79,7 @@ class MultiSnake(Environment):
 
     def action_space(cls) -> Dict[str, ActionSpace]:
         return {
-            "move": CategoricalActionSpace(
-                choices=["up", "down", "left", "right"],
-            ),
+            "move": CategoricalActionSpace(["up", "down", "left", "right"]),
         }
 
     def _spawn_snake(self, color: int) -> None:

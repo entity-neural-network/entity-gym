@@ -121,8 +121,8 @@ class ValidatingEnv(Environment):
                     actor_indices = obs._actor_indices(action_type, self._obs_space)
                     assert shape == (
                         len(actor_indices),
-                        len(space.choices),
-                    ), f"Action of type '{action_type}' has invalid shape: {shape}. Expected: ({len(actor_indices), len(space.choices)})"
+                        len(space.index_to_label),
+                    ), f"Action of type '{action_type}' has invalid shape: {shape}. Expected: ({len(actor_indices), len(space.index_to_label)})"
                     unmasked_count = mask.sum(axis=1)
                     for i in range(len(unmasked_count)):
                         assert (
@@ -134,8 +134,8 @@ class ValidatingEnv(Environment):
                     ), f"Action of type '{action_type}' has invalid length: {len(mask)}. Expected: {len(actor_indices)}"
                     for i in range(len(mask)):
                         assert len(mask[i]) == len(
-                            space.choices
-                        ), f"Action of type '{action_type}' has invalid length of mask for {i}-th actor: {len(mask[i])}. Expected: {len(space.choices)}"
+                            space.index_to_label
+                        ), f"Action of type '{action_type}' has invalid length of mask for {i}-th actor: {len(mask[i])}. Expected: {len(space.index_to_label)}"
                         assert any(
                             mask[i]
                         ), f"Action of type '{action_type}' contains invalid mask for {i}-th actor: {mask[i]}. Expected at least one possible action"

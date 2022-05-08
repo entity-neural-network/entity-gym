@@ -85,7 +85,7 @@ class FloorIsLava(Environment):
                 (-1, -1),
                 (-1, 0),
                 (-1, 1),
-            ][a.actions[0]]
+            ][a.indices[0]]
             self.player.x += dx
             self.player.y += dy
         obs = self.observe(obs_filter, done=True)

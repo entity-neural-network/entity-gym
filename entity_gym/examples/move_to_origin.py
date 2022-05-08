@@ -74,33 +74,33 @@ class MoveToOrigin(Environment):
         for action_name, a in actions.items():
             assert isinstance(a, CategoricalAction), f"{a} is not a CategoricalAction"
             if action_name == "horizontal_thruster":
-                for choice_id in a.actions:
-                    if choice_id == 0:
+                for label in a.labels:
+                    if label == "100% right":
                         self.x_velocity += 0.01
-                    elif choice_id == 1:
+                    elif label == "10% right":
                         self.x_velocity += 0.001
-                    elif choice_id == 2:
+                    elif label == "hold":
                         pass
-                    elif choice_id == 3:
+                    elif label == "10% left":
                         self.x_velocity -= 0.001
-                    elif choice_id == 4:
+                    elif label == "100% left":
                         self.x_velocity -= 0.01
                     else:
-                        raise ValueError(f"Invalid choice id {choice_id}")
+                        raise ValueError(f"Invalid choice id {label}")
             elif action_name == "vertical_thruster":
-                for choice_id in a.actions:
-                    if choice_id == 0:
+                for label in a.labels:
+                    if label == "100% up":
                         self.y_velocity += 0.01
-                    elif choice_id == 1:
+                    elif label == "10% up":
                         self.y_velocity += 0.001
-                    elif choice_id == 2:
+                    elif label == "hold":
                         pass
-                    elif choice_id == 3:
+                    elif label == "10% down":
                         self.y_velocity -= 0.001
-                    elif choice_id == 4:
+                    elif label == "100% down":
                         self.y_velocity -= 0.01
                     else:
-                        raise ValueError(f"Invalid choice id {choice_id}")
+                        raise ValueError(f"Invalid choice id {label}")
             else:
                 raise ValueError(f"Unknown action type {action_name}")
 

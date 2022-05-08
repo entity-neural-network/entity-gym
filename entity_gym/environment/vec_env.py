@@ -346,7 +346,7 @@ def batch_obs(
                         vec_action.actors.push(np.zeros((0, 1), dtype=np.int64))
                         if vec_action.mask is not None:
                             vec_action.mask.push(
-                                np.zeros((0, len(space.choices)), dtype=np.bool_)
+                                np.zeros((0, len(space.index_to_label)), dtype=np.bool_)
                             )
                     elif isinstance(space, SelectEntityActionSpace):
                         vec_action = action_masks[atype]
@@ -382,7 +382,7 @@ def batch_obs(
                 if action.mask is not None:
                     if vec_action.mask is None:
                         vec_action.mask = RaggedBufferBool.from_flattened(
-                            np.ones((0, len(space.choices)), dtype=np.bool_),
+                            np.ones((0, len(space.index_to_label)), dtype=np.bool_),
                             np.zeros(i, dtype=np.int64),
                         )
                     amask = action.mask
@@ -392,7 +392,8 @@ def batch_obs(
                 elif vec_action.mask is not None:
                     vec_action.mask.push(
                         np.ones(
-                            (len(actor_indices), len(space.choices)), dtype=np.bool_
+                            (len(actor_indices), len(space.index_to_label)),
+                            dtype=np.bool_,
                         )
                     )
             elif isinstance(space, SelectEntityActionSpace):

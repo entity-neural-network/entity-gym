@@ -92,7 +92,7 @@ def action_index_to_actions(
             aindex = action[index].as_array()[0, 0]
             _actions[atype] = GlobalCategoricalAction(
                 index=aindex,
-                choice=action_space.choices[aindex],
+                label=action_space.index_to_label[aindex],
                 probs=probs[atype].reshape(-1) if probs is not None else None,
             )
             continue
@@ -110,10 +110,12 @@ def action_index_to_actions(
             actors = []
             for ids in last_obs.ids.values():
                 actors.extend(ids)
-        if isinstance(action_spaces[atype], CategoricalActionSpace):
+        aspace = action_spaces[atype]
+        if isinstance(aspace, CategoricalActionSpace):
             _actions[atype] = CategoricalAction(
                 actors=actors,
-                actions=action[index].as_array().reshape(-1),
+                indices=action[index].as_array().reshape(-1),
+                index_to_label=aspace.index_to_label,
                 probs=probs[atype] if probs is not None else None,
             )
         elif isinstance(action_spaces[atype], SelectEntityActionSpace):
