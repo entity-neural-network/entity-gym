@@ -1,21 +1,11 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import (
-    Any,
-    Dict,
-    Generator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Type, Union
 
 import numpy as np
 import numpy.typing as npt
 
+Features = Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
 EntityID = Any
 EntityName = str
 ActionName = str
@@ -155,12 +145,6 @@ class ObsSpace:
     entities: Dict[EntityName, Entity] = field(default_factory=dict)
 
 
-@dataclass
-class EntityObs:
-    features: Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
-    ids: Optional[Sequence[EntityID]] = None
-
-
 class Observation:
     """
     Observation returned by the environment on one timestep.
@@ -177,9 +161,7 @@ class Observation:
     """
 
     global_features: Union[npt.NDArray[np.float32], Sequence[float]]
-    features: Mapping[
-        EntityName, Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
-    ]
+    features: Mapping[EntityName, Features]
     actions: Mapping[ActionName, ActionMask]
     done: bool
     reward: float
@@ -197,16 +179,19 @@ class Observation:
         visible: Optional[
             Mapping[EntityName, Union[npt.NDArray[np.bool_], Sequence[bool]]]
         ] = None,
-        entities: Optional[Mapping[EntityName, Optional[EntityObs]]] = None,
-        features: Optional[
+        entities: Optional[
             Mapping[
-                EntityName, Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
+                EntityName,
+                Union[
+                    Features,
+                    Tuple[Features, Sequence[EntityID]],
+                    None,
+                ],
             ]
         ] = None,
+        features: Optional[Mapping[EntityName, Features]] = None,
         ids: Optional[Mapping[EntityName, Sequence[EntityID]]] = None,
-        global_features: Optional[
-            Union[npt.NDArray[np.float32], Sequence[float]]
-        ] = None,
+        global_features: Union[npt.NDArray[np.float32], Sequence[float], None] = None,
         actions: Optional[Mapping[ActionName, ActionMask]] = None,
         metrics: Optional[Dict[str, float]] = None,
     ) -> None:
@@ -220,14 +205,14 @@ class Observation:
             self.ids = ids or {}
         else:
             self.features = {
-                etype: entity.features
+                etype: entity[0] if isinstance(entity, tuple) else entity
                 for etype, entity in (entities or {}).items()
                 if entity is not None
             }
             self.ids = {
-                etype: entity.ids
+                etype: entity[1]
                 for etype, entity in (entities or {}).items()
-                if entity is not None and entity.ids is not None
+                if entity is not None and isinstance(entity, tuple)
             }
         self.metrics = metrics or {}
         self.visible = visible or {}
@@ -331,9 +316,6 @@ class CategoricalAction:
     def labels(self) -> List[str]:
         return [self.index_to_label[i] for i in self.indices]
 
-    def items(self) -> Generator[Tuple[EntityID, int], None, None]:
-        yield from zip(self.actors, self.indices)
-
 
 @dataclass
 class SelectEntityAction:
@@ -341,18 +323,12 @@ class SelectEntityAction:
     actees: Sequence[EntityID]
     probs: Optional[npt.NDArray[np.float32]] = None
 
-    def items(self) -> Generator[Tuple[EntityID, EntityID], None, None]:
-        yield from zip(self.actors, self.actees)
-
 
 @dataclass
 class GlobalCategoricalAction:
     index: int
     label: str
     probs: Optional[npt.NDArray[np.float32]] = None
-
-    def items(self) -> Generator[Tuple[None, int], None, None]:
-        yield None, self.index
 
 
 Action = Union[CategoricalAction, SelectEntityAction, GlobalCategoricalAction]

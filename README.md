@@ -1,12 +1,26 @@
-# entity-gym
+# Entity Gym
 
-Entity Gym is a highly flexible abstraction for reinforcement learning environments that allows observations to be represented by lists of structured objects.
-The expressivity of Entity Gym's API makes it very easy to integrate complex environements that expose efficient state-based observation and action spaces.
+Entity Gym is an open source Python library that defines an _entity based_ API for reinforcement learning environments.
+Entity Gym extends the standard paradigm of fixed-size observation spaces by allowing observations to contain dynamically-sized lists of entities.
+This enables a seamless and highly efficient interface with simulators, games, and other complex environments whose state can be naturally expressed as a collection of entities.
 
-The interface is defined in [entity_gym/environment.py](https://github.com/entity-neural-network/incubator/blob/main/entity_gym/entity_gym/environment/environment.py).
+The [ENN-PPO library](https://github.com/entity-neural-network/incubator/tree/main/enn_ppo) can be used to train agents for Entity Gym environments.
 
-A number of simple example environments can be found in [entity_gym/examples](https://github.com/entity-neural-network/incubator/tree/main/entity_gym/entity_gym/examples).
+## Installation
 
-After installing entity-gym with `pip install -e .`, the example environments can be run with `python entity_gym/main.py --env=MoveToOrigin|CherryPick|PickMatchingBalls|Minefield|MultiSnake`.
+```
+pip install entity-gym
+```
 
-The [Quick Start Guide](TUTORIAL.md) walks you through the process of creating a new environment.
+## Usage
+
+- The [Quick Start Guide](tutorial.md) walks you through the process of implementing and running a simple grid-world environment.
+- The [Advanced Tutorial](ADVANCED-TUTORIAL.md) goes into additional detail about environments in which the agent controls multiple entities.
+
+## Examples
+
+A number of simple example environments can be found in [entity_gym/examples](https://github.com/entity-neural-network/incubator/tree/main/entity_gym/entity_gym/examples). The [ENN-Zoo](https://github.com/entity-neural-network/incubator/tree/main/enn_zoo/enn_zoo) project implements Entity Gym bindings for [Procgen](https://github.com/openai/procgen), [Griddly](https://github.com/Bam4d/Griddly), [MicroRTS](https://github.com/santiontanon/microrts), [VizDoom](https://github.com/mwydmuch/ViZDoom), and [CodeCraft](https://github.com/cswinter/DeepCodeCraft).
+
+## API Reference
+
+TODO

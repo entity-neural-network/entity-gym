@@ -124,7 +124,7 @@ class MultiSnake(Environment):
         self.last_scores = deepcopy(self.scores)
         food_to_spawn = []
         assert isinstance(move_action, CategoricalAction)
-        for id, move in move_action.items():
+        for id, move in zip(move_action.actors, move_action.indices):
             snake = self.snakes[id]
             x, y = snake.segments[-1]
             if move == 0:

@@ -66,17 +66,17 @@ class MineSweeper(Environment):
         reward = 1.0 if len(self.mines) == 0 else 0.0
         return Observation(
             entities={
-                "Mine": EntityObs(
-                    features=self.mines,
-                    ids=[("Mine", i) for i in range(len(self.mines))],
+                "Mine": (
+                    self.mines,
+                    [("Mine", i) for i in range(len(self.mines))],
                 ),
-                "Robot": EntityObs(
-                    features=self.robots,
-                    ids=[("Robot", i) for i in range(len(self.robots))],
+                "Robot": (
+                    self.robots,
+                    [("Robot", i) for i in range(len(self.robots))],
                 ),
-                "Orbital Cannon": EntityObs(
-                    features=[(self.orbital_cannon_cooldown,)],
-                    ids=[("Orbital Cannon", 0)],
+                "Orbital Cannon": (
+                    [(self.orbital_cannon_cooldown,)],
+                    [("Orbital Cannon", 0)],
                 )
                 if self.orbital_cannon
                 else None,
@@ -115,7 +115,7 @@ class MineSweeper(Environment):
 
         move = actions["Move"]
         assert isinstance(move, CategoricalAction)
-        for (_, i), choice in move.items():
+        for (_, i), choice in zip(move.actors, move.indices):
             if self.robots[i] is None:
                 continue
             # Action space is ["Up", "Down", "Left", "Right", "Defuse Mines"],

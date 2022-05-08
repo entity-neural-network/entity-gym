@@ -6,7 +6,6 @@ from .vec_env import *
 __all__ = [
     "Environment",
     "Observation",
-    "EntityObs",
     "Action",
     "CategoricalAction",
     "SelectEntityAction",

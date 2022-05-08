@@ -6,9 +6,17 @@ from entity_gym.environment import *
 
 
 class TreasureHunt(Environment):
-    def __init__(self) -> None:
+    def reset(self) -> Observation:
         self.x_pos = 0
         self.y_pos = 0
+        self.game_over = False
+        self.traps = []
+        self.treasure = []
+        for _ in range(5):
+            self.traps.append(self._random_empty_pos())
+        for _ in range(5):
+            self.treasure.append(self._random_empty_pos())
+        return self._observe()
 
     def obs_space(self) -> ObsSpace:
         return ObsSpace(
@@ -34,18 +42,6 @@ class TreasureHunt(Environment):
             y = random.randint(-5, 5)
             if (x, y) not in (self.traps + self.treasure + [(self.x_pos, self.y_pos)]):
                 return x, y
-
-    def reset(self) -> Observation:
-        self.x_pos = 0
-        self.y_pos = 0
-        self.game_over = False
-        self.traps = []
-        self.treasure = []
-        for _ in range(5):
-            self.traps.append(self._random_empty_pos())
-        for _ in range(5):
-            self.treasure.append(self._random_empty_pos())
-        return self._observe()
 
     def act(self, actions: Mapping[ActionName, Action]) -> Observation:
         action = actions["move"]
