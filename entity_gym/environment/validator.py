@@ -1,6 +1,7 @@
-from typing import Dict, Mapping
+from typing import Any, Dict, Mapping
 
 import numpy as np
+import numpy.typing as npt
 
 from entity_gym.environment.environment import (
     Action,
@@ -39,6 +40,9 @@ class ValidatingEnv(Environment):
             print(f"Invalid observation:\n{e}")
             raise e
         return obs
+
+    def render(self, **kwargs: Any) -> npt.NDArray[np.uint8]:
+        return self.env.render(**kwargs)
 
     def obs_space(self) -> ObsSpace:
         return self._obs_space
@@ -117,17 +121,18 @@ class ValidatingEnv(Environment):
                     assert (
                         mask.dtype == np.bool_
                     ), f"Action of type '{action_type}' has invalid dtype: {mask.dtype}. Expected: {np.bool_}"
-                    shape = mask.shape
                     actor_indices = obs._actor_indices(action_type, self._obs_space)
-                    assert shape == (
-                        len(actor_indices),
-                        len(space.index_to_label),
-                    ), f"Action of type '{action_type}' has invalid shape: {shape}. Expected: ({len(actor_indices), len(space.index_to_label)})"
-                    unmasked_count = mask.sum(axis=1)
-                    for i in range(len(unmasked_count)):
-                        assert (
-                            unmasked_count[i] > 0
-                        ), f"Action of type '{action_type}' contains invalid mask for {i}-th actor: {mask[i]}. Expected at least one possible action"
+                    shape = mask.shape
+                    if shape[0] != 0:
+                        assert shape == (
+                            len(actor_indices),
+                            len(space.index_to_label),
+                        ), f"Action of type '{action_type}' has invalid shape: {shape}. Expected: ({len(actor_indices), len(space.index_to_label)})"
+                        unmasked_count = mask.sum(axis=1)
+                        for i in range(len(unmasked_count)):
+                            assert (
+                                unmasked_count[i] > 0
+                            ), f"Action of type '{action_type}' contains invalid mask for {i}-th actor: {mask[i]}. Expected at least one possible action"
                 elif mask is not None:
                     assert len(mask) == len(
                         actor_indices
