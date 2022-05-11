@@ -3,11 +3,17 @@ from collections import defaultdict
 from contextlib import contextmanager
 from typing import DefaultDict, Dict, Generator, List
 
-import torch
-
 
 class Tracer:
-    def __init__(self, cuda: bool = torch.cuda.is_available()) -> None:
+    def __init__(self, cuda: bool = True) -> None:
+        if cuda:
+            try:
+                import torch
+
+                cuda = torch.cuda.is_available()
+            except ImportError:
+                cuda = False
+
         self.start_time: List[float] = []
         self.callstack: List[str] = []
         self.total_time: DefaultDict[str, float] = defaultdict(float)
@@ -19,6 +25,8 @@ class Tracer:
 
     def end(self, name: str) -> None:
         if self.cuda:
+            import torch
+
             torch.cuda.synchronize()
         self.total_time[self.stack] += time.time() - self.start_time.pop()
         actual_name = self.callstack.pop()

@@ -4,8 +4,8 @@ import numpy as np
 import numpy.typing as npt
 from ragged_buffer import RaggedBufferI64
 
-from entity_gym.environment.environment import ActionName, ActionSpace, ObsSpace
-from entity_gym.environment.vec_env import Metric, VecEnv, VecObs
+from entity_gym.env.environment import ActionName, ActionSpace, ObsSpace
+from entity_gym.env.vec_env import Metric, VecEnv, VecObs
 
 
 class AddMetricsWrapper(VecEnv):

@@ -9,15 +9,15 @@ import numpy as np
 import numpy.typing as npt
 from ragged_buffer import RaggedBufferI64
 
-from entity_gym.environment.env_list import EnvList
-from entity_gym.environment.environment import (
+from entity_gym.env.env_list import EnvList
+from entity_gym.env.environment import (
     ActionName,
     ActionSpace,
     Environment,
     Observation,
     ObsSpace,
 )
-from entity_gym.environment.vec_env import VecEnv, VecObs, batch_obs
+from entity_gym.env.vec_env import VecEnv, VecObs, batch_obs
 from entity_gym.serialization.msgpack_ragged import (
     ragged_buffer_decode,
     ragged_buffer_encode,

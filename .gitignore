@@ -11,3 +11,8 @@ __pycache__
 
 # Meld
 *.orig
+
+# Docs
+entity_gym/docs/build
+entity_gym/docs/source/generated
+entity_gym/docs/source/entity_gym

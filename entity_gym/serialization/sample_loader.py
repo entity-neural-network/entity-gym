@@ -6,9 +6,9 @@ import numpy as np
 import tqdm
 from ragged_buffer import RaggedBufferBool, RaggedBufferF32, RaggedBufferI64
 
-from entity_gym.environment import ObsSpace
-from entity_gym.environment.environment import ActionSpace
-from entity_gym.environment.vec_env import VecActionMask
+from entity_gym.env import ObsSpace
+from entity_gym.env.environment import ActionSpace
+from entity_gym.env.vec_env import VecActionMask
 from entity_gym.ragged_dict import RaggedActionDict, RaggedBatchDict
 from entity_gym.serialization.msgpack_ragged import ragged_buffer_decode
 from entity_gym.serialization.sample_recorder import Sample

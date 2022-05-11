@@ -1,163 +1,48 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
 
-Features = Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
-EntityID = Any
-EntityName = str
-ActionName = str
-
-
-@dataclass
-class CategoricalActionSpace:
-    index_to_label: List[str]
-
-    def __len__(self) -> int:
-        return len(self.index_to_label)
-
-
-@dataclass
-class GlobalCategoricalActionSpace:
-    index_to_label: List[str]
-
-    def __len__(self) -> int:
-        return len(self.index_to_label)
-
-
-@dataclass
-class SelectEntityActionSpace:
-    pass
-
-
-ActionSpace = Union[
-    CategoricalActionSpace, SelectEntityActionSpace, GlobalCategoricalActionSpace
-]
-
-
-@dataclass
-class CategoricalActionMask:
-    """
-    Action mask for categorical action that specifies which agents can perform the action,
-    and includes a dense mask that further constraints the choices available to each agent.
-    """
-
-    actor_ids: Optional[Sequence[EntityID]] = None
-    """
-    The ids of the entities that can perform the action.
-    If None, all entities can perform the action.
-    """
-
-    actor_types: Optional[Sequence[EntityName]] = None
-    """
-    The types of the entities that can perform the action.
-    If None, all entities can perform the action.
-    """
-
-    mask: Union[Sequence[Sequence[bool]], np.ndarray, None] = None
-    """
-    A boolean array of shape (len(actor_ids), len(choices)). If mask[i, j] is True, then
-    agent with id actor_ids[i] can perform action j.
-    """
-
-    def __post_init__(self) -> None:
-        assert (
-            self.actor_ids is None or self.actor_types is None
-        ), "Only one of actor_ids or actor_types can be specified"
-
-
-@dataclass
-class GlobalCategoricalActionMask:
-    """
-    Action mask for global categorical action.
-    """
-
-    mask: Union[Sequence[Sequence[bool]], np.ndarray, None] = None
-    """
-    An optional boolean array of shape (len(choices),). If mask[i] is True, then
-    action choice i can be performed.
-    """
-
-
-@dataclass
-class SelectEntityActionMask:
-    """
-    Action mask for select entity action that specifies which agents can perform the action,
-    and includes a dense mask that further constraints what other entities can be selected by
-    each actor.
-    """
-
-    actor_ids: Optional[Sequence[EntityID]] = None
-    """
-    The ids of the entities that can perform the action.
-    If None, all entities can perform the action.
-    """
-
-    actor_types: Optional[Sequence[EntityName]] = None
-    """
-    The types of the entities that can perform the action.
-    If None, all entities can perform the action.
-    """
-
-    actee_types: Optional[Sequence[EntityName]] = None
-    """
-    The types of entities that can be selected by each actor.
-    If None, all entities types can be selected by each actor.
-    """
-
-    actee_ids: Optional[Sequence[EntityID]] = None
-    """
-    The ids of the entities of each type that can be selected by each actor.
-    If None, all entities can be selected by each actor.
-    """
-
-    mask: Optional[npt.NDArray[np.bool_]] = None
-    """
-    An boolean array of shape (len(actor_ids), len(actee_ids)). If mask[i, j] is True, then
-    the agent with id actor_ids[i] can select entity with id actee_ids[j].
-    (NOT CURRENTLY IMPLEMENTED)
-    """
-
-    def __post_init__(self) -> None:
-        assert (
-            self.actor_ids is None or self.actor_types is None
-        ), "Only one of actor_ids or actor_types can be specified"
-        assert (
-            self.actee_types is None or self.actee_ids is None
-        ), "Either actee_entity_types or actees can be specified, but not both."
-
-
-ActionMask = Union[
-    CategoricalActionMask, SelectEntityActionMask, GlobalCategoricalActionMask
-]
+from .action import *
+from .common import ActionName, EntityID, EntityName, Features
 
 
 @dataclass
 class Entity:
+    """Defines the set of features for an entity type."""
+
     features: List[str]
 
 
 @dataclass
 class ObsSpace:
+    """
+    Defines what features can be observed by an agent.
+    """
+
     global_features: List[str] = field(default_factory=list)
+    """fixed size list of features that are observable on each timestep"""
     entities: Dict[EntityName, Entity] = field(default_factory=dict)
+    """
+    Defines the types of entities that can be observed.
+    On a given timestep, an ``Observation`` may contain multiple entities of each type.
+    """
 
 
 class Observation:
     """
     Observation returned by the environment on one timestep.
 
-    Attributes:
-        features: Maps each entity type to a list of features for the entities of that type.
-        actions: Maps each action type to an ActionMask specifying which entities can perform
-            the action.
-        reward: Reward received on this timestep.
-        done: Whether the episode has ended.
-        ids: Maps each entity type to a list of entity ids for the entities of that type.
-        visible: Optional mask for each entity type that prevents the policy but not the
-            value function from observing certain entities.
+    :param features: Maps each entity type to a list of features for the entities of that type.
+    :param actions: Maps each action type to an ActionMask specifying which entities can perform
+        the action.
+    :param reward: Reward received on this timestep.
+    :param done: Whether the episode has ended.
+    :param ids: Maps each entity type to a list of entity ids for the entities of that type.
+    :param visible: Optional mask for each entity type that prevents the policy but not the
+        value function from observing certain entities.
     """
 
     global_features: Union[npt.NDArray[np.float32], Sequence[float]]
@@ -305,51 +190,22 @@ class Observation:
             return len(feats)
 
 
-@dataclass
-class CategoricalAction:
-    actors: Sequence[EntityID]
-    indices: npt.NDArray[np.int64]
-    index_to_label: List[str]
-    probs: Optional[npt.NDArray[np.float32]] = None
-
-    @property
-    def labels(self) -> List[str]:
-        return [self.index_to_label[i] for i in self.indices]
-
-
-@dataclass
-class SelectEntityAction:
-    actors: Sequence[EntityID]
-    actees: Sequence[EntityID]
-    probs: Optional[npt.NDArray[np.float32]] = None
-
-
-@dataclass
-class GlobalCategoricalAction:
-    index: int
-    label: str
-    probs: Optional[npt.NDArray[np.float32]] = None
-
-
-Action = Union[CategoricalAction, SelectEntityAction, GlobalCategoricalAction]
-
-
 class Environment(ABC):
     """
-    Abstraction over reinforcement learning environments with observations based on structured lists of entities.
+    Abstract base class for all environments.
     """
 
     @abstractmethod
     def obs_space(self) -> ObsSpace:
         """
-        Returns a dictionary mapping the name of observable entities to their type.
+        Defines the shape of observations returned by the environment.
         """
         raise NotImplementedError
 
     @abstractmethod
     def action_space(self) -> Dict[str, ActionSpace]:
         """
-        Returns a dictionary mapping the name of actions to their action space.
+        Defines the types of actions that can be taken in the environment.
         """
         raise NotImplementedError
 
@@ -365,32 +221,38 @@ class Environment(ABC):
         """
         Performs the given action and returns the resulting observation.
 
-        Args:
-            action: Maps the name of each action type to the action to perform.
+        :param actions: Maps the name of each action type to the action to perform.
         """
         raise NotImplementedError
 
     def reset_filter(self, obs_filter: ObsSpace) -> Observation:
-        return self.filter_obs(self.reset(), obs_filter)
+        """
+        Resets the environment and returns the initial observation.
+        Any entities or features that are not present in the filter are removed from the observation.
+        """
+        return self._filter_obs(self.reset(), obs_filter)
 
     def render(self, **kwargs: Any) -> npt.NDArray[np.uint8]:
         """
-        Renders the environment
+        Renders the environment.
 
-        Args:
-            **kwargs: a dictionary of arguments to send to the rendering process
+        :param kwargs: a dictionary of arguments to send to the rendering process
         """
         raise NotImplementedError
 
     def act_filter(
         self, actions: Mapping[ActionName, Action], obs_filter: ObsSpace
     ) -> Observation:
-        return self.filter_obs(self.act(actions), obs_filter)
+        """
+        Performs the given action and returns the resulting observation.
+        Any entities or features that are not present in the filter are removed from the observation.
+        """
+        return self._filter_obs(self.act(actions), obs_filter)
 
     def close(self) -> None:
-        pass
+        """Closes the environment."""
 
-    def filter_obs(self, obs: Observation, obs_filter: ObsSpace) -> Observation:
+    def _filter_obs(self, obs: Observation, obs_filter: ObsSpace) -> Observation:
         selectors = self._compile_feature_filter(obs_filter)
         features: Dict[
             EntityName, Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
@@ -426,6 +288,3 @@ class Environment(ABC):
             dtype=np.int32,
         )
         return feature_selection
-
-    def env_cls(self) -> Type["Environment"]:
-        return self.__class__

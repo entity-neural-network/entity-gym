@@ -1,6 +1,6 @@
 from typing import Dict, Type
 
-from entity_gym.environment import Environment
+from entity_gym.env import Environment
 from entity_gym.examples.cherry_pick import CherryPick
 from entity_gym.examples.count import Count
 from entity_gym.examples.floor_is_lava import FloorIsLava
@@ -30,3 +30,19 @@ ENV_REGISTRY: Dict[str, Type[Environment]] = {
     "RockPaperScissors": RockPaperScissors,
     "TreasureHunt": TreasureHunt,
 }
+
+__all__ = [
+    "MoveToOrigin",
+    "CherryPick",
+    "PickMatchingBalls",
+    "Minefield",
+    "MultiSnake",
+    "MultiArmedBandit",
+    "NotHotdog",
+    "Xor",
+    "Count",
+    "FloorIsLava",
+    "MineSweeper",
+    "RockPaperScissors",
+    "TreasureHunt",
+]

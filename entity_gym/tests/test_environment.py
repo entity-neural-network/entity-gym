@@ -3,7 +3,7 @@ from typing import Dict
 import numpy as np
 from ragged_buffer import RaggedBufferBool, RaggedBufferF32, RaggedBufferI64
 
-from entity_gym.environment import (
+from entity_gym.env import (
     ActionSpace,
     CategoricalActionMask,
     CategoricalActionSpace,
@@ -16,9 +16,9 @@ from entity_gym.environment import (
     VecObs,
     VecSelectEntityActionMask,
 )
-from entity_gym.environment.env_list import EnvList
-from entity_gym.environment.parallel_env_list import ParallelEnvList
-from entity_gym.environment.vec_env import batch_obs
+from entity_gym.env.env_list import EnvList
+from entity_gym.env.parallel_env_list import ParallelEnvList
+from entity_gym.env.vec_env import batch_obs
 from entity_gym.examples.cherry_pick import CherryPick
 from entity_gym.examples.xor import Xor
 

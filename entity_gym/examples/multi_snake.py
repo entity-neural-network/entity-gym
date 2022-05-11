@@ -5,7 +5,7 @@ from typing import Dict, List, Mapping, Tuple
 
 import numpy as np
 
-from entity_gym.environment import (
+from entity_gym.env import (
     Action,
     ActionSpace,
     CategoricalAction,

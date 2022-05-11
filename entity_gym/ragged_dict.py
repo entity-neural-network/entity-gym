@@ -5,7 +5,7 @@ import numpy as np
 import numpy.typing as npt
 from ragged_buffer import RaggedBuffer
 
-from .environment.vec_env import VecActionMask
+from .env.vec_env import VecActionMask
 
 ScalarType = TypeVar("ScalarType", bound=np.generic, covariant=True)
 

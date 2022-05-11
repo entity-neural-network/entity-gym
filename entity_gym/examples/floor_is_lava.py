@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Dict, Mapping
 
 from entity_gym.dataclass_utils import extract_features, obs_space_from_dataclasses
-from entity_gym.environment import (
+from entity_gym.env import (
     Action,
     ActionSpace,
     CategoricalAction,

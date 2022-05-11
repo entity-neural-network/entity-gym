@@ -5,8 +5,8 @@ import msgpack_numpy
 import numpy as np
 from ragged_buffer import RaggedBufferF32, RaggedBufferI64
 
-from entity_gym.environment import ActionSpace, ObsSpace, VecEnv, VecObs
-from entity_gym.environment.environment import ActionName
+from entity_gym.env import ActionSpace, ObsSpace, VecEnv, VecObs
+from entity_gym.env.environment import ActionName
 from entity_gym.serialization.msgpack_ragged import (
     ragged_buffer_decode,
     ragged_buffer_encode,

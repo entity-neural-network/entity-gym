@@ -1,14 +1,8 @@
 from dataclasses import dataclass
 from typing import Dict, Mapping
 
-from entity_gym.environment import (
-    Action,
-    ActionSpace,
-    Environment,
-    Observation,
-    ObsSpace,
-)
-from entity_gym.environment.environment import (
+from entity_gym.env import Action, ActionSpace, Environment, Observation, ObsSpace
+from entity_gym.env.environment import (
     GlobalCategoricalAction,
     GlobalCategoricalActionMask,
     GlobalCategoricalActionSpace,

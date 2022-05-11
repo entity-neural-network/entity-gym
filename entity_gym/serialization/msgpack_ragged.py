@@ -4,8 +4,8 @@ from typing import Any
 import msgpack_numpy
 from ragged_buffer import RaggedBufferBool, RaggedBufferF32, RaggedBufferI64
 
-from entity_gym.environment.environment import *
-from entity_gym.environment.vec_env import *
+from entity_gym.env.environment import *
+from entity_gym.env.vec_env import *
 
 # For security reasons we don't want to deserialize classes that are not in this list.
 WHITELIST = {

@@ -4,7 +4,7 @@ from typing import Dict, List, Mapping
 
 import numpy as np
 
-from entity_gym.environment import (
+from entity_gym.env import (
     Action,
     ActionSpace,
     Entity,
@@ -15,7 +15,7 @@ from entity_gym.environment import (
     SelectEntityActionMask,
     SelectEntityActionSpace,
 )
-from entity_gym.environment.environment import ActionName
+from entity_gym.env.environment import ActionName
 
 
 @dataclass

@@ -7,7 +7,7 @@ import numpy as np
 import numpy.typing as npt
 from ragged_buffer import RaggedBufferBool, RaggedBufferF32, RaggedBufferI64
 
-from entity_gym.environment.environment import (
+from entity_gym.env.environment import (
     ActionName,
     ActionSpace,
     CategoricalActionSpace,

@@ -4,7 +4,7 @@ import numpy as np
 import numpy.typing as npt
 from ragged_buffer import RaggedBufferI64
 
-from entity_gym.environment.environment import (
+from entity_gym.env.environment import (
     Action,
     ActionName,
     ActionSpace,
@@ -21,7 +21,7 @@ from entity_gym.environment.environment import (
     SelectEntityActionMask,
     SelectEntityActionSpace,
 )
-from entity_gym.environment.vec_env import VecEnv, VecObs, batch_obs
+from entity_gym.env.vec_env import VecEnv, VecObs, batch_obs
 
 
 class EnvList(VecEnv):

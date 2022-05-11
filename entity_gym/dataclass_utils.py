@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Type
 
 import numpy as np
 
-from .environment import Entity, ObsSpace
+from .env import Entity, ObsSpace
 
 
 def obs_space_from_dataclasses(*dss: Type) -> ObsSpace:
