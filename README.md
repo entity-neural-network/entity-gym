@@ -1,5 +1,11 @@
 # Entity Gym
 
+[![Actions Status](https://github.com/entity-neural-network/incubator/workflows/Test/badge.svg)](https://github.com/entity-neural-network/incubator/actions)
+[![PyPI](https://img.shields.io/pypi/v/entity-gym.svg?style=flat-square)](https://pypi.org/project/entity-gym/)
+[![Documentation Status](https://readthedocs.org/projects/entity-gym/badge/?version=latest&style=flat-square)](https://entity-gym.readthedocs.io/en/latest/?badge=latest)
+[![Discord](https://img.shields.io/discord/913497968701747270?style=flat-square)](https://discord.gg/SjVqhSW4Qf)
+
+
 Entity Gym is an open source Python library that defines an _entity based_ API for reinforcement learning environments.
 Entity Gym extends the standard paradigm of fixed-size observation spaces by allowing observations to contain dynamically-sized lists of entities.
 This enables a seamless and highly efficient interface with simulators, games, and other complex environments whose state can be naturally expressed as a collection of entities.

@@ -1,8 +1,15 @@
 [tool.poetry]
-name = "entity_gym"
-version = "0.1.0"
+name = "entity-gym"
+version = "0.1.2"
 description = "Entity Gym"
 authors = ["Clemens Winter <clemenswinter1@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+classifiers = [
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: Apache Software License",
+    "License :: OSI Approved :: MIT License",
+]
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.10"
