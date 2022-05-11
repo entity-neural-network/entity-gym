@@ -1,6 +1,6 @@
 # Entity Gym
 
-[![Actions Status](https://github.com/entity-neural-network/incubator/workflows/Test/badge.svg)](https://github.com/entity-neural-network/incubator/actions)
+[![Actions Status](https://github.com/entity-neural-network/entity-gym/workflows/Test/badge.svg)](https://github.com/entity-neural-network/entity-gym/actions)
 [![PyPI](https://img.shields.io/pypi/v/entity-gym.svg?style=flat-square)](https://pypi.org/project/entity-gym/)
 [![Documentation Status](https://readthedocs.org/projects/entity-gym/badge/?version=latest&style=flat-square)](https://entity-gym.readthedocs.io/en/latest/?badge=latest)
 [![Discord](https://img.shields.io/discord/913497968701747270?style=flat-square)](https://discord.gg/SjVqhSW4Qf)
@@ -24,4 +24,4 @@ You can find tutorials, guides, and an API reference on the [Entity Gym document
 
 ## Examples
 
-A number of simple example environments can be found in [entity_gym/examples](https://github.com/entity-neural-network/incubator/tree/main/entity_gym/entity_gym/examples). The [ENN-Zoo](https://github.com/entity-neural-network/incubator/tree/main/enn_zoo/enn_zoo) project implements Entity Gym bindings for [Procgen](https://github.com/openai/procgen), [Griddly](https://github.com/Bam4d/Griddly), [MicroRTS](https://github.com/santiontanon/microrts), [VizDoom](https://github.com/mwydmuch/ViZDoom), and [CodeCraft](https://github.com/cswinter/DeepCodeCraft).
+A number of simple example environments can be found in [entity_gym/examples](https://github.com/entity-neural-network/entity-gym/tree/main/entity_gym/examples). The [ENN-Zoo](https://github.com/entity-neural-network/incubator/tree/main/enn_zoo/enn_zoo) project implements Entity Gym bindings for [Procgen](https://github.com/openai/procgen), [Griddly](https://github.com/Bam4d/Griddly), [MicroRTS](https://github.com/santiontanon/microrts), [VizDoom](https://github.com/mwydmuch/ViZDoom), and [CodeCraft](https://github.com/cswinter/DeepCodeCraft).
