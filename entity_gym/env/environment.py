@@ -132,7 +132,7 @@ class Observation:
                 ids.extend(id_to_index[id] for id in self.ids[etype])
             return np.array(ids, dtype=np.int64)
         else:
-            return np.arange(  # type: ignore
+            return np.arange(
                 sum(len(self.ids[etype]) for etype in obs_space.entities),
                 dtype=np.int64,
             )
@@ -154,7 +154,7 @@ class Observation:
                 ids.extend(id_to_index[id] for id in self.ids[etype])
             return np.array(ids, dtype=np.int64)
         else:
-            return np.arange(  # type: ignore
+            return np.arange(
                 sum(len(self.ids[etype]) for etype in obs_space.entities),
                 dtype=np.int64,
             )

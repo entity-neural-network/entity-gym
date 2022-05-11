@@ -8,7 +8,7 @@ class Tracer:
     def __init__(self, cuda: bool = True) -> None:
         if cuda:
             try:
-                import torch
+                import torch  # type: ignore
 
                 cuda = torch.cuda.is_available()
             except ImportError:
