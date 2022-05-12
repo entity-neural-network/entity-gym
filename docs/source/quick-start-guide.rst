@@ -288,4 +288,4 @@ If you run the environment again, you will now see and be able to interact with 
 
 This concludes the tutorial.
 If you want to learn how to train a neural network to play the game we just implemented,
-check out the (enn-trainer tutorial)[https://enn-trainer.readthedocs.io/en/latest/quick-start-guide.html].
+check out the `enn-trainer tutorial <https://enn-trainer.readthedocs.io/en/latest/quick-start-guide.html>`_.
