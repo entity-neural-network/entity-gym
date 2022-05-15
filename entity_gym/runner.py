@@ -50,7 +50,7 @@ class CliRunner:
         self.env = ValidatingEnv(env)
         self.agent = agent
 
-    def run(self) -> None:
+    def run(self, restart: bool = False) -> None:
         print_env(self.env)
         print()
 
@@ -59,7 +59,14 @@ class CliRunner:
         obs = self.env.reset_filter(obs_space)
         total_reward = obs.reward
         step = 0
-        while not obs.done:
+        while True:
+            if obs.done:
+                if restart:
+                    obs = self.env.reset_filter(obs_space)
+                    total_reward = obs.reward
+                    step = 0
+                else:
+                    break
             if self.agent is None:
                 agent_action: Optional[Dict[str, Action]] = None
                 agent_prediction: Optional[float] = None
@@ -127,19 +134,44 @@ class CliRunner:
                 for actor_id in actor_ids:
                     if isinstance(action_def, CategoricalActionSpace):
                         # Prompt user for action
+                        if agent_action is None:
+                            choices = " ".join(
+                                f"{i}/{label}"
+                                for i, label in enumerate(action_def.index_to_label)
+                            )
+                        else:
+                            aa = agent_action[action_name]
+                            assert isinstance(aa, CategoricalAction)
+                            actor_index = aa.actors.index(actor_id)
+                            probs = aa.probs[actor_index]  # type: ignore
+                            assert probs is not None
+                            choice_id = aa.indices[actor_index]
+                            choices = " ".join(
+                                click.style(
+                                    f"{i}/{label} ",
+                                    fg="yellow" if i == choice_id else None,
+                                    bold=i == choice_id,
+                                )
+                                + click.style(f"{100 * prob:.1f}%", fg="yellow")
+                                for i, (label, prob) in enumerate(
+                                    zip(action_def.index_to_label, probs)
+                                )
+                            )
                         click.echo(
                             f"Choose "
                             + click.style(f"{action_name}", fg="green")
                             + f" for actor {actor_id}"
-                            + " ("
-                            + " ".join(
-                                f"{i}/{label}"
-                                for i, label in enumerate(action_def.index_to_label)
-                            )
-                            + ")"
+                            + f" ({choices})"
                         )
+
                         try:
-                            choice_id = int(input())
+                            inp = input()
+                            if inp == "" and agent_action is not None:
+                                aa = agent_action[action_name]
+                                assert isinstance(aa, CategoricalAction)
+                                choice_id = aa.indices[actor_index]
+                            else:
+                                choice_id = int(inp)
                             received_action = True
                         except KeyboardInterrupt:
                             print()
