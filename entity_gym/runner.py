@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from pdb import Restart
 from typing import Dict, Optional, Tuple
 
 import click
@@ -141,12 +140,12 @@ class CliRunner:
                                 for i, label in enumerate(action_def.index_to_label)
                             )
                         else:
-                            actor_index = agent_action[action_name].actors.index(
-                                actor_id
-                            )
-                            probs = agent_action[action_name].probs[actor_index]
+                            aa = agent_action[action_name]
+                            assert isinstance(aa, CategoricalAction)
+                            actor_index = aa.actors.index(actor_id)
+                            probs = aa.probs[actor_index]  # type: ignore
                             assert probs is not None
-                            choice_id = agent_action[action_name].indices[actor_index]  # type: ignore
+                            choice_id = aa.indices[actor_index]
                             choices = " ".join(
                                 click.style(
                                     f"{i}/{label} ",
@@ -168,7 +167,9 @@ class CliRunner:
                         try:
                             inp = input()
                             if inp == "" and agent_action is not None:
-                                choice_id = agent_action[action_name].indices[actor_index]  # type: ignore
+                                aa = agent_action[action_name]
+                                assert isinstance(aa, CategoricalAction)
+                                choice_id = aa.indices[actor_index]
                             else:
                                 choice_id = int(inp)
                             received_action = True
