@@ -157,6 +157,26 @@ class VecObs:
 
     def extend(self, b: "VecObs") -> None:
         num_envs = len(self.reward)
+        # Extend visible (must happen before features in case of backfill)
+        for etype in self.features.keys():
+            if etype in b.visible:
+                if etype not in self.visible:
+                    self.visible[etype] = RaggedBufferBool.from_flattened(
+                        flattened=np.ones(
+                            shape=(self.features[etype].items(), 1), dtype=np.bool_
+                        ),
+                        lengths=self.features[etype].size1(),
+                    )
+                self.visible[etype].extend(b.visible[etype])
+            elif etype in self.visible:
+                self.visible[etype].extend(
+                    RaggedBufferBool.from_flattened(
+                        flattened=np.ones(
+                            shape=(b.features[etype].items(), 1), dtype=np.bool_
+                        ),
+                        lengths=b.features[etype].size1(),
+                    )
+                )
         for etype, feats in b.features.items():
             if etype not in self.features:
                 self.features[etype] = empty_ragged_f32(
@@ -182,25 +202,6 @@ class VecObs:
                 self.metrics[name].max = max(self.metrics[name].max, stats.max)
             else:
                 self.metrics[name] = copy.copy(stats)
-        for etype in self.features.keys():
-            if etype in b.visible:
-                if etype not in self.visible:
-                    self.visible[etype] = RaggedBufferBool.from_flattened(
-                        flattened=np.ones(
-                            shape=(self.features[etype].items(), 1), dtype=np.bool_
-                        ),
-                        lengths=self.features[etype].size1(),
-                    )
-                self.visible[etype].extend(b.visible[etype])
-            elif etype in self.visible:
-                self.visible[etype].extend(
-                    RaggedBufferBool.from_flattened(
-                        flattened=np.ones(
-                            shape=(b.features[etype].items(), 1), dtype=np.bool_
-                        ),
-                        lengths=b.features[etype].size1(),
-                    )
-                )
 
 
 class VecEnv(ABC):
