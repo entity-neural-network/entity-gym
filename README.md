@@ -10,7 +10,7 @@ Entity Gym is an open source Python library that defines an _entity based_ API f
 Entity Gym extends the standard paradigm of fixed-size observation spaces by allowing observations to contain dynamically-sized lists of entities.
 This enables a seamless and highly efficient interface with simulators, games, and other complex environments whose state can be naturally expressed as a collection of entities.
 
-The [ENN-PPO library](https://github.com/entity-neural-network/incubator/tree/main/enn_ppo) can be used to train agents for Entity Gym environments.
+The [enn-trainer library](https://github.com/entity-neural-network/enn-trainer) can be used to train agents for Entity Gym environments.
 
 ## Installation
 
