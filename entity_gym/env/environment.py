@@ -132,10 +132,13 @@ class Observation:
                 ids.extend(id_to_index[id] for id in self.ids[etype])
             return np.array(ids, dtype=np.int64)
         else:
-            return np.arange(
-                sum(len(self.ids[etype]) for etype in obs_space.entities),
+            return np.array(
+                np.arange(
+                    sum(len(self.ids[etype]) for etype in obs_space.entities),
+                    dtype=np.int64,
+                ),
                 dtype=np.int64,
-            )  # type: ignore
+            )
 
     def _actee_indices(
         self, atype: ActionName, obs_space: ObsSpace
@@ -154,10 +157,13 @@ class Observation:
                 ids.extend(id_to_index[id] for id in self.ids[etype])
             return np.array(ids, dtype=np.int64)
         else:
-            return np.arange(
-                sum(len(self.ids[etype]) for etype in obs_space.entities),
+            return np.array(
+                np.arange(
+                    sum(len(self.ids[etype]) for etype in obs_space.entities),
+                    dtype=np.int64,
+                ),
                 dtype=np.int64,
-            )  # type: ignore
+            )
 
     def id_to_index(self, obs_space: ObsSpace) -> Dict[EntityID, int]:
         offset = 0
