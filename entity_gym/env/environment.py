@@ -135,7 +135,7 @@ class Observation:
             return np.arange(
                 sum(len(self.ids[etype]) for etype in obs_space.entities),
                 dtype=np.int64,
-            )
+            )  # type: ignore
 
     def _actee_indices(
         self, atype: ActionName, obs_space: ObsSpace
@@ -157,7 +157,7 @@ class Observation:
             return np.arange(
                 sum(len(self.ids[etype]) for etype in obs_space.entities),
                 dtype=np.int64,
-            )
+            )  # type: ignore
 
     def id_to_index(self, obs_space: ObsSpace) -> Dict[EntityID, int]:
         offset = 0
