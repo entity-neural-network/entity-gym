@@ -117,11 +117,11 @@ class ValidatingEnv(Environment):
                             actor_type in obs.ids
                         ), f"Action of type '{action_type}' contains invalid actor type {actor_type} which is not in ids: {obs.ids.keys()}"
                 mask = action_mask.mask
+                actor_indices = obs._actor_indices(action_type, self._obs_space)
                 if isinstance(mask, np.ndarray):
                     assert (
                         mask.dtype == np.bool_
                     ), f"Action of type '{action_type}' has invalid dtype: {mask.dtype}. Expected: {np.bool_}"
-                    actor_indices = obs._actor_indices(action_type, self._obs_space)
                     shape = mask.shape
                     if shape[0] != 0:
                         assert shape == (
