@@ -1,12 +1,9 @@
-from typing import Dict
-from entity_gym.env.validator import ValidatingEnv
-
 import numpy as np
 from ragged_buffer import RaggedBufferI64
 
 from entity_gym.env.env_list import EnvList
+from entity_gym.env.validator import ValidatingEnv
 from entity_gym.examples.minesweeper import MineSweeper
-from entity_gym.examples.xor import Xor
 
 
 def test_env_list() -> None:
