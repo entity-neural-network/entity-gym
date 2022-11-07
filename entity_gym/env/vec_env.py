@@ -253,6 +253,13 @@ class VecEnv(ABC):
         pass
 
 
+    def has_global_entity(self) -> bool:
+        return len(self.obs_space().global_features) > 0 or any(
+            isinstance(space, GlobalCategoricalActionSpace)
+            for space in self.action_space().values()
+        )
+
+
 def batch_obs(
     obs: List[Observation], obs_space: ObsSpace, action_space: Dict[str, ActionSpace]
 ) -> VecObs:
