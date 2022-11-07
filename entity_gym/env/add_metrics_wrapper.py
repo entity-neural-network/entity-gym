@@ -22,6 +22,9 @@ class AddMetricsWrapper(VecEnv):
                 environment will be tracked.
         """
         self.env = env
+        self.entity_types = list(env.obs_space().entities.keys())
+        if env.has_global_entity():
+            self.entity_types.append("__global__")
         self.total_reward = np.zeros(len(env), dtype=np.float32)
         self.total_steps = np.zeros(len(env), dtype=np.int64)
         self.filter = np.ones(len(env), dtype=np.bool8) if filter is None else filter
@@ -48,12 +51,40 @@ class AddMetricsWrapper(VecEnv):
         self.total_steps += 1
         episodic_reward = Metric()
         episodic_length = Metric()
+        count = len(self.total_steps)
         obs.metrics["step"] = Metric(
             sum=self.total_steps.sum(),
-            count=len(self.total_steps),
+            count=count,
             min=self.total_steps.min(),
             max=self.total_steps.max(),
         )
+
+        for entity in self.entity_types:
+            if entity in obs.features:
+                _sum = obs.features[entity].items()
+                counts = obs.features[entity].size1()
+                _min = counts.min()
+                _max = counts.max()
+            else:
+                _sum = 0
+                _min = 0
+                _max = 0
+            obs.metrics[f"entity_count/{entity}"] = Metric(
+                sum=_sum, count=count, min=_min, max=_max
+            )
+        if len(obs.features) > 0:
+            combined_counts: Any = sum(
+                features.size1() for features in obs.features.values()
+            )
+        else:
+            combined_counts = np.zeros(count, dtype=np.int64)
+        obs.metrics["entity_count"] = Metric(
+            sum=combined_counts.sum(),
+            count=count,
+            min=combined_counts.min(),
+            max=combined_counts.max(),
+        )
+
         for i in np.arange(len(self))[obs.done & self.filter]:
             episodic_reward.push(self.total_reward[i])
             episodic_length.push(self.total_steps[i])
