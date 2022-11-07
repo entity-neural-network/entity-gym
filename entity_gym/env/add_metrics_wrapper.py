@@ -81,7 +81,7 @@ class AddMetricsWrapper(VecEnv):
         obs.metrics["entity_count"] = Metric(
             sum=combined_counts.sum(),
             count=count,
-            min=combined_counts.max(),
+            min=combined_counts.min(),
             max=combined_counts.max(),
         )
 
