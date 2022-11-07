@@ -73,7 +73,7 @@ class AddMetricsWrapper(VecEnv):
                 sum=_sum, count=count, min=_min, max=_max
             )
         if len(obs.features) > 0:
-            combined_counts = sum(
+            combined_counts: Any = sum(
                 features.size1() for features in obs.features.values()
             )
         else:

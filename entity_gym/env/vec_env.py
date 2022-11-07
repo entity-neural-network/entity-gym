@@ -252,7 +252,6 @@ class VecEnv(ABC):
     def close(self) -> None:
         pass
 
-
     def has_global_entity(self) -> bool:
         return len(self.obs_space().global_features) > 0 or any(
             isinstance(space, GlobalCategoricalActionSpace)
