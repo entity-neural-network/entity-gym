@@ -3,8 +3,6 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Dict, List, Mapping, Tuple
 
-import numpy as np
-
 from entity_gym.env import (
     Action,
     ActionSpace,
@@ -180,36 +178,27 @@ class MultiSnake(Environment):
         return Observation(
             global_features=[self.step],
             features={
-                "SnakeHead": np.array(
-                    [
-                        [
-                            s.segments[-1][0],
-                            s.segments[-1][1],
-                            cycle_color(s.color),
-                        ]
-                        for s in self.snakes
-                    ],
-                    dtype=np.float32,
-                ),
-                "SnakeBody": np.array(
-                    [
-                        [sx, sy, cycle_color(snake.color)]
-                        for snake in self.snakes
-                        for sx, sy in snake.segments[:-1]
-                    ],
-                    dtype=np.float32,
-                ).reshape(-1, 3),
-                "Food": np.array(
-                    [
-                        [
-                            f.position[0],
-                            f.position[1],
-                            cycle_color(f.color),
-                        ]
-                        for f in self.food
-                    ],
-                    dtype=np.float32,
-                ),
+                "SnakeHead": [
+                    (
+                        s.segments[-1][0],
+                        s.segments[-1][1],
+                        cycle_color(s.color),
+                    )
+                    for s in self.snakes
+                ],
+                "SnakeBody": [
+                    (sx, sy, cycle_color(snake.color))
+                    for snake in self.snakes
+                    for sx, sy in snake.segments[:-1]
+                ],
+                "Food": [
+                    (
+                        f.position[0],
+                        f.position[1],
+                        cycle_color(f.color),
+                    )
+                    for f in self.food
+                ],
             },
             ids={
                 "SnakeHead": list(range(self.num_snakes)),
