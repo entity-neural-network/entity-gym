@@ -105,17 +105,32 @@ class CliRunner:
                         + click.style(f"{action_name}", fg="green")
                         + f" ({choices})"
                     )
-                    try:
-                        inp = input()
-                        if inp == "" and agent_action is not None:
-                            choice_id = agent_action[action_name].index  # type: ignore
-                        else:
-                            choice_id = int(inp)
-                        received_action = True
-                    except KeyboardInterrupt:
-                        print()
-                        print("Exiting")
-                        return
+                    while True:
+                        try:
+                            inp = input()
+                            if inp == "" and agent_action is not None:
+                                choice_id = agent_action[action_name].index  # type: ignore
+                            else:
+                                try:
+                                    choice_id = int(inp)
+                                except ValueError:
+                                    print(
+                                        f"Invalid choice '{inp}' (must be an integer)"
+                                    )
+                                    continue
+                                if choice_id < 0 or choice_id >= len(
+                                    action_def.index_to_label
+                                ):
+                                    print(
+                                        f"Invalid choice {inp} (must be in range [0, {len(action_def.index_to_label) - 1}])"
+                                    )
+                                    continue
+                            received_action = True
+                            break
+                        except KeyboardInterrupt:
+                            print()
+                            print("Exiting")
+                            return
                     action[action_name] = GlobalCategoricalAction(
                         index=choice_id,
                         label=action_def.index_to_label[choice_id],
