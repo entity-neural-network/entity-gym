@@ -114,9 +114,13 @@ class CliRunner:
                                 try:
                                     choice_id = int(inp)
                                 except ValueError:
-                                    print(f"Invalid choice '{inp}' (must be an integer)")
+                                    print(
+                                        f"Invalid choice '{inp}' (must be an integer)"
+                                    )
                                     continue
-                                if choice_id < 0 or choice_id >= len(action_def.index_to_label):
+                                if choice_id < 0 or choice_id >= len(
+                                    action_def.index_to_label
+                                ):
                                     print(
                                         f"Invalid choice {inp} (must be in range [0, {len(action_def.index_to_label) - 1}])"
                                     )
