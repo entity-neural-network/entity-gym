@@ -119,7 +119,7 @@ Finally, we implement the `act` method that takes an action and returns the next
     def act(self, actions: Mapping[ActionName, Action]) -> Observation:
         move = actions["Move"]
         assert isinstance(move, CategoricalAction)
-        for (_, i), action in zip(move.actors, move.actions):
+        for (_, i), action in zip(move.actors, move.indices):
             # Action space is ["Up", "Down", "Left", "Right", "Defuse Mines"],
             x, y = self.robots[i]
             if choice == 0 and y < self.height - 1:
