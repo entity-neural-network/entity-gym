@@ -16,7 +16,7 @@ class TreasureHunt(Environment):
             self.traps.append(self._random_empty_pos())
         for _ in range(5):
             self.treasure.append(self._random_empty_pos())
-        return self._observe()
+        return self.observe()
 
     def obs_space(self) -> ObsSpace:
         return ObsSpace(
@@ -62,9 +62,9 @@ class TreasureHunt(Environment):
         if (self.x_pos, self.y_pos) in self.traps or len(self.treasure) == 0:
             self.game_over = True
 
-        return self._observe(reward)
+        return self.observe(reward)
 
-    def _observe(self, reward: float = 0.0) -> Observation:
+    def observe(self, reward: float = 0.0) -> Observation:
         return Observation(
             global_features=[self.x_pos, self.y_pos],
             features={

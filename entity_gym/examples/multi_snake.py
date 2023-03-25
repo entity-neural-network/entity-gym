@@ -113,7 +113,7 @@ class MultiSnake(Environment):
             self._spawn_snake(i)
         for i in range(self.num_snakes):
             self._spawn_food(i)
-        return self._observe()
+        return self.observe()
 
     def act(self, actions: Mapping[str, Action]) -> Observation:
         game_over = False
@@ -167,9 +167,9 @@ class MultiSnake(Environment):
             self._spawn_food(color)
         if self.step >= self.max_steps:
             game_over = True
-        return self._observe(done=game_over)
+        return self.observe(done=game_over)
 
-    def _observe(self, done: bool = False, player: int = 0) -> Observation:
+    def observe(self, done: bool = False, player: int = 0) -> Observation:
         color_offset = player * (self.num_snakes // self.num_players)
 
         def cycle_color(color: int) -> int:

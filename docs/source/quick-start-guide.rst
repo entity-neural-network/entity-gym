@@ -81,15 +81,15 @@ Let's add some logic to keep track of the player's position and expose it in obs
         def reset(self) -> Observation:
             self.x_pos = 0
             self.y_pos = 0
-            return self._observe()
+            return self.observe()
 
-        def _observe(self) -> Observation:
+        def observe(self) -> Observation:
             return Observation(
                 global_features=[self.x_pos, self.y_pos], done=False, reward=0
             )
 
         def act(self, actions: Mapping[ActionName, Action]) -> Observation:
-            return self._observe()
+            return self.observe()
 
         def action_space(self) -> Dict[str, ActionSpace]:
             return {}
@@ -113,7 +113,7 @@ Implementing a "move" action
 Now that the player has a position, we can add an action that moves the player.
 We change the ``action_space`` method to define ``"move"`` as global categorical action with 4 choices.
 We implement the logic for the action in the ``act`` method.
-Finally, we include a ``GlobalCategoricalActionMask`` for the ``"move"`` action in the ``Observation`` returned by ``_observe``.
+Finally, we include a ``GlobalCategoricalActionMask`` for the ``"move"`` action in the ``Observation`` returned by ``observe``.
 If we wanted the ``"move"`` action to be unavailable on some timestep, we could omit the mask from the corresponding observation.
 
 .. code-block:: python
@@ -139,9 +139,9 @@ If we wanted the ``"move"`` action to be unavailable on some timestep, we could 
                 self.x_pos -= 1
             elif action.label == "right" and self.x_pos < 10:
                 self.x_pos += 1
-            return self._observe()
+            return self.observe()
 
-        def _observe(self) -> Observation:
+        def observe(self) -> Observation:
             return Observation(
                 global_features=[self.x_pos, self.y_pos],
                 done=False,
@@ -185,7 +185,7 @@ Now, we are going to place additional entities in the environment:
 * Moving onto a *trap* immediately ends the game.
 
 We define the new entity types by specifying the ``ObsSpace.entities`` dictionary in the ``obs_space`` method.
-Similarly, ``_observe`` now returns a ``features`` dictionary with an entry specifying the current positions of both entities.
+Similarly, ``observe`` now returns a ``features`` dictionary with an entry specifying the current positions of both entities.
 The logic that defines how the entities are spawned and affect the game is added to ``reset`` and ``act``.
 
 .. code-block:: python
@@ -204,7 +204,7 @@ The logic that defines how the entities are spawned and affect the game is added
                 self.traps.append(self._random_empty_pos())
             for _ in range(5):
                 self.treasure.append(self._random_empty_pos())
-            return self._observe()
+            return self.observe()
 
         def obs_space(self) -> ObsSpace:
             return ObsSpace(
@@ -236,9 +236,9 @@ The logic that defines how the entities are spawned and affect the game is added
             if (self.x_pos, self.y_pos) in self.traps or len(self.treasure) == 0:
                 self.game_over = True
 
-            return self._observe(reward)
+            return self.observe(reward)
 
-        def _observe(self, reward: float = 0.0) -> Observation:
+        def observe(self, reward: float = 0.0) -> Observation:
             return Observation(
                 global_features=[self.x_pos, self.y_pos],
                 features={
