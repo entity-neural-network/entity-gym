@@ -248,7 +248,7 @@ Instead, we will use a `SelectEntityAction </entity_gym/entity_gym.env.html#enti
                     )
                 },
                 actions={
-                    "Move": DenseCategoricalActionMask(
+                    "Move": CategoricalActionMask(
                         actor_types=["Robot"],
                     ),
                     "Fire Orbital Cannon": SelectEntityActionMask(
