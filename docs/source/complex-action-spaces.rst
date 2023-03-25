@@ -5,7 +5,7 @@ Complex Action Spaces
 This tutorial walks you through implementing a grid-world environment in which the player controls multiple entities at the same time.
 You will learn how to use the ``CategoricalActionSpace`` to allow multiple entities perform an action, use action masks to limit the set of available action choices, and use the ``SelectEntiyActionSpace`` to implement an action that allows entities to select other entities.
 
-An extended version of the environment implemented in this tutorial can be found in `entity_gym/examples/minesweeper.py <https://github.com/entity-neural-network/incubator/blob/main/entity_gym/entity_gym/examples/minesweeper.py>`_.
+An extended version of the environment implemented in this tutorial can be found in `entity_gym/examples/minesweeper.py <https://github.com/entity-neural-network/entity-gym/blob/main/entity_gym/examples/minesweeper.py>`_.
 
 .. toctree::
 
