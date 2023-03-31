@@ -240,9 +240,7 @@ class CliRunner:
                             try:
                                 entity_id = int(input())
                             except ValueError:
-                                print(
-                                    f"Invalid choice '{inp}' (must be an integer)"
-                                )
+                                print(f"Invalid choice '{inp}' (must be an integer)")
                                 continue
                         except KeyboardInterrupt:
                             print()
