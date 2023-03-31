@@ -146,6 +146,21 @@ class CliRunner:
                     actor_ids = obs.index_to_id(obs_space)
 
                 print()
+
+                # Initialize actions
+                if isinstance(action_def, CategoricalActionSpace):
+                    if action_name not in action:
+                        action[action_name] = CategoricalAction(
+                            indices=np.zeros(
+                                (0, len(action_def.index_to_label)), dtype=np.int64
+                            ),
+                            index_to_label=action_def.index_to_label,
+                            actors=[],
+                        )
+                elif isinstance(action_def, SelectEntityActionSpace):
+                    if action_name not in action:
+                        action[action_name] = SelectEntityAction([], [])
+
                 for actor_id in actor_ids:
                     if isinstance(action_def, CategoricalActionSpace):
                         # Prompt user for action
@@ -186,20 +201,18 @@ class CliRunner:
                                 assert isinstance(aa, CategoricalAction)
                                 choice_id = aa.indices[actor_index]
                             else:
-                                choice_id = int(inp)
+                                try:
+                                    choice_id = int(inp)
+                                except ValueError:
+                                    print(
+                                        f"Invalid choice '{inp}' (must be an integer)"
+                                    )
+                                    continue
                             received_action = True
                         except KeyboardInterrupt:
                             print()
                             print("Exiting")
                             return
-                        if action_name not in action:
-                            action[action_name] = CategoricalAction(
-                                indices=np.zeros(
-                                    (0, len(action_def.index_to_label)), dtype=np.int64
-                                ),
-                                index_to_label=action_def.index_to_label,
-                                actors=[],
-                            )
                         a = action[action_name]
                         assert isinstance(a, CategoricalAction)
                         a.indices = np.array(list(a.indices) + [choice_id])
@@ -224,14 +237,16 @@ class CliRunner:
                             print("Selectable entities: all")
 
                         try:
-                            entity_id = int(input())
+                            try:
+                                entity_id = int(input())
+                            except ValueError:
+                                print(f"Invalid choice '{inp}' (must be an integer)")
+                                continue
                         except KeyboardInterrupt:
                             print()
                             print("Exiting")
                             return
                         received_action = True
-                        if action_name not in action:
-                            action[action_name] = SelectEntityAction([], [])
                         a = action[action_name]
                         assert isinstance(a, SelectEntityAction)
                         a.actors = list(a.actors) + [actor_id]
