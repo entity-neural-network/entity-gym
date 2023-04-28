@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "entity-gym"
-version = "0.1.9"
+version = "0.1.10"
 description = "Entity Gym"
 authors = ["Clemens Winter <clemenswinter1@gmail.com>"]
 license = "MIT"
