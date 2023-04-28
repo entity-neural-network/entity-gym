@@ -55,9 +55,9 @@ def ragged_buffer_decode(obj: Any) -> Any:
 
             if dtype == np.float32:
                 return RaggedBufferF32.from_flattened(flattened, lengths)
-            elif dtype == int:
+            elif dtype == int or dtype == np.int64:
                 return RaggedBufferI64.from_flattened(flattened, lengths)
-            elif dtype == bool:
+            elif dtype == bool or dtype == np.bool8:
                 return RaggedBufferBool.from_flattened(flattened, lengths)
             else:
                 raise ValueError(f"Unsupported RaggedBuffer dtype: {dtype}")
