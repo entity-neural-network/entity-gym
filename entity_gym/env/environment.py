@@ -294,3 +294,112 @@ class Environment(ABC):
             dtype=np.int32,
         )
         return feature_selection
+
+
+class MultiAgentEnvironment(ABC):
+    """
+    Abstract base class for all environments.
+    """
+
+    @abstractmethod
+    def obs_space(self) -> ObsSpace:
+        """
+        Defines the shape of observations returned by the environment.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def action_space(self) -> Dict[str, ActionSpace]:
+        """
+        Defines the types of actions that can be taken in the environment.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def reset(self) -> Observation:
+        """
+        Resets the environment and returns the initial observation.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    # def act(self, actions: Mapping[ActionName, Action]) -> Observation:
+    def act(self, actions: Union[Mapping[ActionName, Action], List[Mapping[ActionName, Action]]]) -> Union[Observation, List[Observation]]:
+    
+        """
+        Performs the given action and returns the resulting observation.
+
+        :param actions: Maps the name of each action type to the action to perform.
+        """
+        raise NotImplementedError
+
+    def reset_filter(self, obs_filter: ObsSpace) -> Observation:
+        """
+        Resets the environment and returns the initial observation.
+        Any entities or features that are not present in the filter are removed from the observation.
+        """
+        return self._filter_obs(self.reset(), obs_filter)
+
+    @abstractmethod
+    def get_num_players(self):
+        raise NotImplementedError
+
+    def render(self, **kwargs: Any) -> npt.NDArray[np.uint8]:
+        """
+        Renders the environment.
+
+        :param kwargs: a dictionary of arguments to send to the rendering process
+        """
+        raise NotImplementedError
+
+    def act_filter(
+        self, actions: Mapping[ActionName, Action], obs_filter: ObsSpace
+    ) -> Observation:
+        """
+        Performs the given action and returns the resulting observation.
+        Any entities or features that are not present in the filter are removed from the observation.
+        """
+        return self._filter_obs(self.act(actions), obs_filter)
+
+    def close(self) -> None:
+        """Closes the environment."""
+
+    def _filter_obs(self, obs_list: List[Observation], obs_filter: ObsSpace) -> List[Observation]:
+        filtered_obs_list = []
+        for _, obs in enumerate(obs_list):
+            selectors = self._compile_feature_filter(obs_filter)
+            features: Dict[
+                EntityName, Union[npt.NDArray[np.float32], Sequence[Sequence[float]]]
+            ] = {}
+            for etype, feats in obs.features.items():
+                selector = selectors[etype]
+                if isinstance(feats, np.ndarray):
+                    features[etype] = feats[:, selector].reshape(
+                        feats.shape[0], len(selector)
+                    )
+                else:
+                    features[etype] = [[entity[i] for i in selector] for entity in feats]
+            filtered_obs_list.append(Observation(
+                global_features=obs.global_features,
+                features=features,
+                ids=obs.ids,
+                actions=obs.actions,
+                done=obs.done,
+                reward=obs.reward,
+                metrics=obs.metrics,
+                visible=obs.visible,
+            ))
+        return filtered_obs_list
+
+    def _compile_feature_filter(self, obs_space: ObsSpace) -> Dict[str, np.ndarray]:
+        obs_space = self.obs_space()
+        feature_selection = {}
+        for entity_name, entity in obs_space.entities.items():
+            feature_selection[entity_name] = np.array(
+                [entity.features.index(f) for f in entity.features], dtype=np.int32
+            )
+        feature_selection["__global__"] = np.array(
+            [obs_space.global_features.index(f) for f in obs_space.global_features],
+            dtype=np.int32,
+        )
+        return feature_selection

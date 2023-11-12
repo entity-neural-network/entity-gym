@@ -21,7 +21,7 @@ from entity_gym.env.environment import (
     SelectEntityActionMask,
     SelectEntityActionSpace,
 )
-from entity_gym.env.vec_env import VecEnv, VecObs, batch_obs
+from entity_gym.env.vec_env import VecEnv, VecObs, batch_obs, multi_batch_os
 
 
 class EnvList(VecEnv):
@@ -76,6 +76,60 @@ class EnvList(VecEnv):
     def action_space(self) -> Dict[ActionName, ActionSpace]:
         return self._action_space
 
+
+class MultiEnvList(VecEnv):
+    def __init__(self, create_env: Callable[[], Environment], num_envs: int):
+        self.envs = [create_env() for _ in range(num_envs)]
+        self.last_obs: List[Observation] = []
+        env = self.envs[0] if num_envs > 0 else create_env()
+        self._obs_space = env.obs_space()
+        self._action_space = env.action_space()
+    def reset(self, obs_space: ObsSpace) -> VecObs:
+        batch = self._batch_obs([e.reset_filter(obs_space) for e in self.envs])
+        return batch
+    def render(self, **kwargs: Any) -> npt.NDArray[np.uint8]:
+        return np.stack([e.render(**kwargs) for e in self.envs])
+    def close(self) -> None:
+        for env in self.envs:
+            env.close()
+    def act(
+        self, actions: Mapping[int, Mapping[str, RaggedBufferI64]], obs_space: ObsSpace
+    ) -> VecObs:
+        """
+            :param actions: Dict of player_id to Dict of action_name to RaggedBufferI64
+            :param obs_space: ObsSpace
+        """
+        observations = []
+        action_spaces = self.action_space()
+        for i_env, env in enumerate(self.envs):
+            # only need to step environment using actions of current player
+            current_player = env.get_current_player() # environment must implement get_current_player()
+            _actions = action_index_to_actions(
+                self._obs_space, action_spaces, actions[current_player], self.last_obs[i_env][current_player], i_env
+            )
+            obs = env.act_filter(_actions, obs_space)
+            
+            if any([o.done for o in obs]):
+                new_obs = env.reset_filter(obs_space)
+                for player_id, no in enumerate(new_obs):
+                    no.done = True
+                    no.reward = obs[player_id].reward
+                    no.metrics = obs[player_id].metrics
+                observations.append(new_obs)
+            else:
+                observations.append(obs)
+        return self._batch_obs(observations)
+        
+    def _batch_obs(self, obs: List[List[Observation]]) -> VecObs:
+        self.last_obs = obs
+        vecobs = multi_batch_os(obs, self.obs_space(), self.action_space())
+        return vecobs
+    def __len__(self) -> int:
+        return len(self.envs)
+    def obs_space(self) -> ObsSpace:
+        return self._obs_space
+    def action_space(self) -> Dict[ActionName, ActionSpace]:
+        return self._action_space
 
 def action_index_to_actions(
     obs_space: ObsSpace,
