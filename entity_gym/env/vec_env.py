@@ -258,6 +258,11 @@ class VecEnv(ABC):
             for space in self.action_space().values()
         )
 
+def multi_batch_os(obs_list: List[List[Observation]], obs_space: ObsSpace, action_space: Dict[str, ActionSpace]):
+    vecobs_list = []
+    for obs in zip(*obs_list):
+        vecobs_list.append(batch_obs(obs, obs_space, action_space))
+    return vecobs_list
 
 def batch_obs(
     obs: List[Observation], obs_space: ObsSpace, action_space: Dict[str, ActionSpace]

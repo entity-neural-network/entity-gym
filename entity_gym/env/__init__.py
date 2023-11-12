@@ -30,6 +30,7 @@ from .env_list import *
 from .environment import *
 from .parallel_env_list import *
 from .validator import ValidatingEnv
+from .multi_validator import MultiValidatingEnv
 from .vec_env import *
 
 __all__ = [
@@ -64,5 +65,6 @@ __all__ = [
     "VecSelectEntityActionMask",
     # Wrappers
     "ValidatingEnv",
+    "MultiValidatingEnv",
     "AddMetricsWrapper",
 ]
