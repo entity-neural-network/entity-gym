@@ -14,6 +14,8 @@ from entity_gym.examples.pick_matching_balls import PickMatchingBalls
 from entity_gym.examples.rock_paper_scissors import RockPaperScissors
 from entity_gym.examples.tutorial import TreasureHunt
 from entity_gym.examples.xor import Xor
+from entity_gym.examples.slider import Slider
+
 
 ENV_REGISTRY: Dict[str, Type[Environment]] = {
     "MoveToOrigin": MoveToOrigin,
@@ -23,12 +25,12 @@ ENV_REGISTRY: Dict[str, Type[Environment]] = {
     "MultiSnake": MultiSnake,
     "MultiArmedBandit": MultiArmedBandit,
     "NotHotdog": NotHotdog,
-    "Xor": Xor,
     "Count": Count,
     "FloorIsLava": FloorIsLava,
     "MineSweeper": MineSweeper,
     "RockPaperScissors": RockPaperScissors,
     "TreasureHunt": TreasureHunt,
+    "Slider": Slider,
 }
 
 __all__ = [
@@ -45,4 +47,5 @@ __all__ = [
     "MineSweeper",
     "RockPaperScissors",
     "TreasureHunt",
+    "Slider"
 ]
