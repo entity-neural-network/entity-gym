@@ -34,7 +34,7 @@ class Slider(Environment):
 
     def action_space(self) -> Dict[str, ActionSpace]:
         return {
-            "classify": CategoricalActionSpace([str(i/1000) for i in range(1000)]),
+            "classify": CategoricalActionSpace([str(i / 1000) for i in range(1000)]),
         }
 
     def reset(self) -> Observation:
@@ -50,7 +50,7 @@ class Slider(Environment):
         val = float(a.index_to_label[a.indices[0]])
         reward = 1 - abs(val - self.slider)
         done = True
-        
+
         return self.observe(done, reward)
 
     def observe(self, done: bool = False, reward: float = 0) -> Observation:

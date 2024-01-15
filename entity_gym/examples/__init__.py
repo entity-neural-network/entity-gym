@@ -2,6 +2,7 @@ from typing import Dict, Type
 
 from entity_gym.env import Environment
 from entity_gym.examples.cherry_pick import CherryPick
+from entity_gym.examples.contious_slider import ContinuousSlider
 from entity_gym.examples.count import Count
 from entity_gym.examples.floor_is_lava import FloorIsLava
 from entity_gym.examples.minefield import Minefield
@@ -12,11 +13,9 @@ from entity_gym.examples.multi_snake import MultiSnake
 from entity_gym.examples.not_hotdog import NotHotdog
 from entity_gym.examples.pick_matching_balls import PickMatchingBalls
 from entity_gym.examples.rock_paper_scissors import RockPaperScissors
+from entity_gym.examples.slider import Slider
 from entity_gym.examples.tutorial import TreasureHunt
 from entity_gym.examples.xor import Xor
-from entity_gym.examples.slider import Slider
-from entity_gym.examples.contious_slider import ContinuousSlider
-
 
 ENV_REGISTRY: Dict[str, Type[Environment]] = {
     "MoveToOrigin": MoveToOrigin,
@@ -50,5 +49,5 @@ __all__ = [
     "MineSweeper",
     "RockPaperScissors",
     "TreasureHunt",
-    "Slider"
+    "Slider",
 ]

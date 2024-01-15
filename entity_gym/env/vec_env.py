@@ -11,12 +11,12 @@ from entity_gym.env.environment import (
     ActionName,
     ActionSpace,
     CategoricalActionSpace,
+    ContinuousActionSpace,
     EntityName,
     GlobalCategoricalActionSpace,
     Observation,
     ObsSpace,
     SelectEntityActionSpace,
-    ContinuousActionSpace,
 )
 
 
@@ -389,9 +389,11 @@ def batch_obs(
                     )
                 else:
                     raise ValueError(f"Unknown action space type: {space}")
-            if isinstance(space, CategoricalActionSpace) or isinstance(
-                space, GlobalCategoricalActionSpace) or isinstance(space, ContinuousActionSpace
-                ):
+            if (
+                isinstance(space, CategoricalActionSpace)
+                or isinstance(space, GlobalCategoricalActionSpace)
+                or isinstance(space, ContinuousActionSpace)
+            ):
                 vec_action = action_masks[atype]
                 assert isinstance(vec_action, VecCategoricalActionMask)
                 actor_indices = o._actor_indices(atype, obs_space)

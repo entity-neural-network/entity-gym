@@ -19,10 +19,11 @@ class CategoricalActionSpace:
     def __len__(self) -> int:
         return len(self.index_to_label)
 
+
 @dataclass
 class ContinuousActionSpace:
     """
-    Defines one continous action that can be taken by multiple entities.
+    Defines one continuous action that can be taken by multiple entities.
     """
 
     index_to_label: List[str]
@@ -30,6 +31,7 @@ class ContinuousActionSpace:
 
     def __len__(self) -> int:
         return len(self.index_to_label)
+
 
 @dataclass
 class GlobalCategoricalActionSpace:
@@ -58,7 +60,10 @@ class SelectEntityActionSpace:
 
 
 ActionSpace = Union[
-    CategoricalActionSpace, ContinuousActionSpace, SelectEntityActionSpace, GlobalCategoricalActionSpace
+    CategoricalActionSpace,
+    ContinuousActionSpace,
+    SelectEntityActionSpace,
+    GlobalCategoricalActionSpace,
 ]
 
 
@@ -203,7 +208,8 @@ class ContinuousAction:
     @property
     def labels(self) -> List[str]:
         """the human readable labels of the actions that were performed"""
-        return [self.index_to_label[i] for i in self.indices]
+        return [self.index_to_label[i] for i in self.values]
+
 
 @dataclass
 class SelectEntityAction:

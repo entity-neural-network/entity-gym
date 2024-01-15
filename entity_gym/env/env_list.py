@@ -11,6 +11,8 @@ from entity_gym.env.environment import (
     CategoricalAction,
     CategoricalActionMask,
     CategoricalActionSpace,
+    ContinuousAction,
+    ContinuousActionSpace,
     EntityID,
     Environment,
     GlobalCategoricalAction,
@@ -20,8 +22,6 @@ from entity_gym.env.environment import (
     SelectEntityAction,
     SelectEntityActionMask,
     SelectEntityActionSpace,
-    ContinuousAction,
-    ContinuousActionSpace,
 )
 from entity_gym.env.vec_env import VecEnv, VecObs, batch_obs
 

@@ -7,10 +7,8 @@ import numpy as np
 from entity_gym.env import (
     Action,
     ActionSpace,
-    CategoricalAction,
-    ContinuousAction,
     CategoricalActionMask,
-    CategoricalActionSpace,
+    ContinuousAction,
     ContinuousActionSpace,
     Entity,
     Environment,
@@ -53,7 +51,7 @@ class ContinuousSlider(Environment):
         val = a.values[0]
         reward = 1 - abs(val - self.slider)
         done = True
-        
+
         return self.observe(done, reward)
 
     def observe(self, done: bool = False, reward: float = 0) -> Observation:
