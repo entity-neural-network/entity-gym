@@ -20,6 +20,8 @@ from entity_gym.env.environment import (
     SelectEntityAction,
     SelectEntityActionMask,
     SelectEntityActionSpace,
+    ContinuousAction,
+    ContinuousActionSpace,
 )
 from entity_gym.env.vec_env import VecEnv, VecObs, batch_obs
 
@@ -117,6 +119,13 @@ def action_index_to_actions(
                 indices=action[index].as_array().reshape(-1),
                 index_to_label=aspace.index_to_label,
                 probs=probs[atype] if probs is not None else None,
+            )
+        if isinstance(action_spaces[atype], ContinuousActionSpace):
+            values = action[index].as_array().reshape(-1) / np.iinfo(np.int64).max
+            _actions[atype] = ContinuousAction(
+                actors=actors,
+                values=values,
+                index_to_label=aspace.index_to_label,
             )
         elif isinstance(action_spaces[atype], SelectEntityActionSpace):
             assert isinstance(mask, SelectEntityActionMask)

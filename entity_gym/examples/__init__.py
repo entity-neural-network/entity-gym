@@ -15,6 +15,7 @@ from entity_gym.examples.rock_paper_scissors import RockPaperScissors
 from entity_gym.examples.tutorial import TreasureHunt
 from entity_gym.examples.xor import Xor
 from entity_gym.examples.slider import Slider
+from entity_gym.examples.contious_slider import ContinuousSlider
 
 
 ENV_REGISTRY: Dict[str, Type[Environment]] = {
@@ -30,7 +31,9 @@ ENV_REGISTRY: Dict[str, Type[Environment]] = {
     "MineSweeper": MineSweeper,
     "RockPaperScissors": RockPaperScissors,
     "TreasureHunt": TreasureHunt,
+    "Xor": Xor,
     "Slider": Slider,
+    "ContinuousSlider": ContinuousSlider,
 }
 
 __all__ = [

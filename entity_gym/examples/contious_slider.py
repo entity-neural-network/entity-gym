@@ -8,8 +8,10 @@ from entity_gym.env import (
     Action,
     ActionSpace,
     CategoricalAction,
+    ContinuousAction,
     CategoricalActionMask,
     CategoricalActionSpace,
+    ContinuousActionSpace,
     Entity,
     Environment,
     Observation,
@@ -18,7 +20,7 @@ from entity_gym.env import (
 
 
 @dataclass
-class Slider(Environment):
+class ContinuousSlider(Environment):
     """
     On each timestep, there is either a generic "Object" entity with a `is_hotdog` property, or a "Hotdog" object.
     The "Player" entity is always present, and has an action to classify the other entity as hotdog or not hotdog.
@@ -34,7 +36,7 @@ class Slider(Environment):
 
     def action_space(self) -> Dict[str, ActionSpace]:
         return {
-            "classify": CategoricalActionSpace([str(i/1000) for i in range(1000)]),
+            "set": ContinuousActionSpace(["slider_value"]),
         }
 
     def reset(self) -> Observation:
@@ -45,9 +47,10 @@ class Slider(Environment):
     def act(self, actions: Mapping[str, Action]) -> Observation:
         self.step += 1
 
-        a = actions["classify"]
-        assert isinstance(a, CategoricalAction), f"{a} is not a CategoricalAction"
-        val = float(a.index_to_label[a.indices[0]])
+        a = actions["set"]
+        assert isinstance(a, ContinuousAction), f"{a} is not a CategoricalAction"
+        # divide index by max int64 to get a float between 0 and 1
+        val = a.values[0]
         reward = 1 - abs(val - self.slider)
         done = True
         
@@ -74,7 +77,7 @@ class Slider(Environment):
                 ),
             },
             actions={
-                "classify": CategoricalActionMask(actor_ids=[0]),
+                "set": CategoricalActionMask(actor_ids=[0]),
             },
             ids={"Player": [0]},
             reward=reward,
