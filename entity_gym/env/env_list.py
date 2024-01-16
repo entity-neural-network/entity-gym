@@ -11,6 +11,8 @@ from entity_gym.env.environment import (
     CategoricalAction,
     CategoricalActionMask,
     CategoricalActionSpace,
+    ContinuousAction,
+    ContinuousActionSpace,
     EntityID,
     Environment,
     GlobalCategoricalAction,
@@ -117,6 +119,13 @@ def action_index_to_actions(
                 indices=action[index].as_array().reshape(-1),
                 index_to_label=aspace.index_to_label,
                 probs=probs[atype] if probs is not None else None,
+            )
+        if isinstance(action_spaces[atype], ContinuousActionSpace):
+            values = action[index].as_array().reshape(-1) / np.iinfo(np.int64).max
+            _actions[atype] = ContinuousAction(
+                actors=actors,
+                values=values,
+                index_to_label=aspace.index_to_label,
             )
         elif isinstance(action_spaces[atype], SelectEntityActionSpace):
             assert isinstance(mask, SelectEntityActionMask)

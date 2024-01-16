@@ -21,6 +21,19 @@ class CategoricalActionSpace:
 
 
 @dataclass
+class ContinuousActionSpace:
+    """
+    Defines one continuous action that can be taken by multiple entities.
+    """
+
+    index_to_label: List[str]
+    """list of human-readable labels for each action"""
+
+    def __len__(self) -> int:
+        return len(self.index_to_label)
+
+
+@dataclass
 class GlobalCategoricalActionSpace:
     """
     Defines a discrete set of actions that can be taken on each timestep.
@@ -47,7 +60,10 @@ class SelectEntityActionSpace:
 
 
 ActionSpace = Union[
-    CategoricalActionSpace, SelectEntityActionSpace, GlobalCategoricalActionSpace
+    CategoricalActionSpace,
+    ContinuousActionSpace,
+    SelectEntityActionSpace,
+    GlobalCategoricalActionSpace,
 ]
 
 
@@ -172,6 +188,27 @@ class CategoricalAction:
     def labels(self) -> List[str]:
         """the human readable labels of the actions that were performed"""
         return [self.index_to_label[i] for i in self.indices]
+
+
+@dataclass
+class ContinuousAction:
+    """
+    Outcome of a contious action.
+    """
+
+    actors: Sequence[EntityID]
+    """the ids of the entities that chose the actions"""
+
+    values: npt.NDArray[np.int64]
+    """the indices of the actions that were chosen"""
+
+    index_to_label: List[str]
+    """mapping from action indices to human readable labels"""
+
+    @property
+    def labels(self) -> List[str]:
+        """the human readable labels of the actions that were performed"""
+        return [self.index_to_label[i] for i in self.values]
 
 
 @dataclass

@@ -11,6 +11,7 @@ from entity_gym.env.environment import (
     ActionName,
     ActionSpace,
     CategoricalActionSpace,
+    ContinuousActionSpace,
     EntityName,
     GlobalCategoricalActionSpace,
     Observation,
@@ -293,6 +294,11 @@ def batch_obs(
             action_masks[action_name] = VecSelectEntityActionMask(
                 RaggedBufferI64(1), RaggedBufferI64(1)
             )
+        elif isinstance(space, ContinuousActionSpace):
+            action_masks[action_name] = VecCategoricalActionMask(
+                RaggedBufferI64(1),
+                None,
+            )
         else:
             raise NotImplementedError(f"Action space {space} not supported")
     if global_entity:
@@ -377,10 +383,16 @@ def batch_obs(
                     action_masks[atype] = VecSelectEntityActionMask(
                         empty_ragged_i64(1, i), empty_ragged_i64(1, i)
                     )
+                elif isinstance(space, ContinuousActionSpace()):
+                    action_masks[atype] = VecCategoricalActionMask(
+                        empty_ragged_i64(1, i), None
+                    )
                 else:
                     raise ValueError(f"Unknown action space type: {space}")
-            if isinstance(space, CategoricalActionSpace) or isinstance(
-                space, GlobalCategoricalActionSpace
+            if (
+                isinstance(space, CategoricalActionSpace)
+                or isinstance(space, GlobalCategoricalActionSpace)
+                or isinstance(space, ContinuousActionSpace)
             ):
                 vec_action = action_masks[atype]
                 assert isinstance(vec_action, VecCategoricalActionMask)
