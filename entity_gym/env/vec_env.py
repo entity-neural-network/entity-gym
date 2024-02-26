@@ -347,7 +347,9 @@ def batch_obs(
         for atype, space in action_space.items():
             if atype not in o.actions:
                 if atype in action_masks:
-                    if isinstance(space, CategoricalActionSpace):
+                    if isinstance(space, CategoricalActionSpace) or isinstance(
+                        space, GlobalCategoricalActionSpace
+                    ):
                         vec_action = action_masks[atype]
                         assert isinstance(vec_action, VecCategoricalActionMask)
                         vec_action.actors.push(np.zeros((0, 1), dtype=np.int64))
