@@ -49,10 +49,10 @@ jobs:
       #----------------------------------------------
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry run pip install torch
+        run: pip install torch==1.12.0+cpu -f https://download.pytorch.org/whl/cpu/torch_stable.html
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry run pip install torch-scatter
+        run: pip install torch-scatter -f https://data.pyg.org/whl/torch-1.12.0+cpu.html
       #----------------------------------------------
       # install your root project, if required
       #----------------------------------------------
@@ -109,10 +109,10 @@ jobs:
       #----------------------------------------------
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry run pip install torch
+        run: pip install torch==1.12.0+cpu -f https://download.pytorch.org/whl/cpu/torch_stable.html
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry run pip install torch-scatter
+        run: pip install torch-scatter -f https://data.pyg.org/whl/torch-1.12.0+cpu.html
       #----------------------------------------------
       # install your root project, if required
       #----------------------------------------------
